@@ -1,0 +1,4 @@
+.itemCard {
+  @apply p-4 bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-xl transition-all shadow-sm hover:shadow-lg hover:border-primary-300;
+}
+

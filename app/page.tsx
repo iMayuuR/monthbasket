@@ -1,0 +1,415 @@
+"use client";
+
+import { useState, useEffect, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { MonthlyItem } from "@/types";
+import { useItemPrices } from "@/hooks/useItemPrices";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import { groceryCatalog, GroceryItem } from "@/lib/grocery-data";
+import Header from "@/components/Header";
+import ApiKeySettings from "@/components/ApiKeySettings";
+import MonthSelector from "@/components/MonthSelector";
+import GroceryCatalog from "@/components/GroceryCatalog";
+import MonthlyList from "@/components/MonthlyList";
+import { staggerContainer, fadeInUp } from "@/lib/animations";
+import Toast from "@/components/Toast";
+import { PremiumCard } from "@/components/ui/PremiumCard";
+import { PremiumButton } from "@/components/ui/PremiumButton";
+import { Trash2, Download, Sparkles } from "lucide-react";
+
+const MONTH_KEY = (year: number, month: number) => `${year}-${month.toString().padStart(2, "0")}`;
+
+export default function HomePage() {
+  // Initialize with current month
+  const getCurrentMonth = () => {
+    const now = new Date();
+    return `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, "0")}`;
+  };
+
+  const [selectedMonth, setSelectedMonth] = useState<string>(getCurrentMonth());
+  const [catalogOpen, setCatalogOpen] = useState(false);
+  const [apiKeySettingsOpen, setApiKeySettingsOpen] = useState(false);
+  const [availableMonths, setAvailableMonths] = useState<string[]>([]);
+  const [toast, setToast] = useState<{ message: string; visible: boolean }>({
+    message: "",
+    visible: false,
+  });
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  const { prices: itemPrices, setItemPrice } = useItemPrices();
+
+  const {
+    value: monthlyLists,
+    addItem,
+    removeItem,
+    toggleChecked,
+    updateItem,
+    clearMonth,
+    setTotalBudget,
+    getMonthData,
+    deleteMonth,
+  } = useLocalStorage("grocery-monthly-lists", {});
+
+  // Update available months whenever monthlyLists changes
+  useEffect(() => {
+    const months = Object.keys(monthlyLists);
+    if (months.length === 0 && selectedMonth) {
+      // If no months yet but we have a selected month, include it
+      setAvailableMonths([selectedMonth]);
+    } else if (!months.includes(selectedMonth)) {
+      // Ensure selected month is in list
+      setAvailableMonths([...months, selectedMonth]);
+    } else {
+      setAvailableMonths(months);
+    }
+  }, [monthlyLists]);
+
+  const currentMonthData = useMemo(() => {
+    return getMonthData(selectedMonth);
+  }, [monthlyLists, selectedMonth, getMonthData]);
+
+  const currentMonthItems = useMemo(() => {
+    return currentMonthData.items;
+  }, [currentMonthData]);
+
+  const monthTotalBudget = useMemo(() => {
+    return currentMonthData.totalBudget;
+  }, [currentMonthData]);
+
+  const totalItems = useMemo(() => {
+    return Object.values(monthlyLists).reduce((total, data) => {
+      const items = Array.isArray(data) ? data : data.items;
+      return total + items.length;
+    }, 0);
+  }, [monthlyLists]);
+
+  const handleAddItem = (item: GroceryItem & { quantity?: string }) => {
+    // Check if there's a last used price for this item
+    const lastPrice = itemPrices[item.id];
+    // Use the quantity from the item if provided (from quantity selector), otherwise fall back to typicalQuantity
+    const quantity = item.quantity || item.typicalQuantity || "";
+    const newItem: MonthlyItem = {
+      catalogItemId: item.id,
+      id: Date.now() + Math.random(), // unique ID
+      name: item.englishName,
+      marathiName: item.marathiName,
+      category: item.category,
+      quantity,
+      price: lastPrice, // Pre-fill with last used price if available
+      checked: false,
+      addedAt: new Date().toISOString(),
+    };
+    addItem(selectedMonth, newItem);
+    // Show feedback
+    setToast({ message: `Added ${item.marathiName}`, visible: true });
+  };
+
+  const showToast = (message: string) => {
+    setToast({ message, visible: true });
+  };
+
+  const handleAddNewMonth = () => {
+    const now = new Date();
+    // Add next month (or future month)
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const monthKey = MONTH_KEY(nextMonth.getFullYear(), nextMonth.getMonth() + 1);
+
+    // Ensure it's added to available months
+    setAvailableMonths((prev) => [...new Set([...prev, monthKey])]);
+    setSelectedMonth(monthKey);
+  };
+
+  const handleDeleteMonth = () => {
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteMonth = () => {
+    deleteMonth(selectedMonth);
+    setDeleteDialogOpen(false);
+    // Switch to current month if deleted month was selected
+    const now = new Date();
+    const currentMonth = MONTH_KEY(now.getFullYear(), now.getMonth() + 1);
+    setSelectedMonth(currentMonth);
+    showToast("Month deleted successfully");
+  };
+
+  const handleSetTotalBudget = (total: number | undefined) => {
+    setTotalBudget(selectedMonth, total);
+  };
+
+  const handleExportList = () => {
+    const monthName = new Date(
+      parseInt(selectedMonth.split("-")[0]),
+      parseInt(selectedMonth.split("-")[1]) - 1
+    ).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+
+    const pendingItems = currentMonthItems.filter((i) => !i.checked);
+    const completedItems = currentMonthItems.filter((i) => i.checked);
+
+    const pendingTotal = pendingItems.reduce((sum, item) => {
+      const qty = parseFloat(item.quantity || "0");
+      return sum + (item.price || 0) * qty;
+    }, 0);
+
+    const completedTotal = completedItems.reduce((sum, item) => {
+      const qty = parseFloat(item.quantity || "0");
+      return sum + (item.price || 0) * qty;
+    }, 0);
+
+    const total = pendingTotal + completedTotal;
+
+    let report = `🛒 GROCERY REPORT\n`;
+    report += `📅 Month: ${monthName}\n`;
+    report += `═".repeat(40)}\n\n`;
+
+    report += `📊 SUMMARY\n`;
+    report += `├─ To Buy: ${pendingItems.length} items\n`;
+    report += `├─ Completed: ${completedItems.length} items\n`;
+    report += `└─ Total: ${pendingTotal.toFixed(2)} + ${completedTotal.toFixed(2)} = ₹${total.toFixed(2)}\n`;
+
+    if (monthTotalBudget) {
+      const budgetDiff = monthTotalBudget - total;
+      report += `\n💰 Monthly Budget: ₹${monthTotalBudget.toFixed(2)}\n`;
+      report += `📉 Variance: ₹${budgetDiff.toFixed(2)} ${budgetDiff >= 0 ? "✅" : "❌"}\n`;
+    }
+
+    report += `\n📝 ${pendingItems.length > 0 ? "TO BUY" : "ALL DONE!"}\n`;
+    report += `${"─".repeat(40)}\n`;
+    pendingItems.forEach((item) => {
+      const qty = item.quantity || "1";
+      const price = item.price ? ` @ ₹${item.price}` : " (price not set)";
+      const lineTotal = item.price ? ` = ₹${(item.price * parseFloat(qty || "0")).toFixed(2)}` : "";
+      report += `• ${item.marathiName} (${item.name})\n`;
+      report += `  Quantity: ${qty}${price}${lineTotal}\n`;
+    });
+
+    if (completedItems.length > 0) {
+      report += `\n✅ COMPLETED (${completedItems.length})\n`;
+      report += `${"─".repeat(40)}\n`;
+      completedItems.forEach((item) => {
+        const qty = item.quantity || "1";
+        const price = item.price ? `@ ₹${item.price}` : "";
+        report += `✓ ${item.marathiName} - ${qty} ${price}\n`;
+      });
+    }
+
+    report += `\nGenerated: ${new Date().toLocaleString()}\n`;
+
+    const blob = new Blob([report], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `grocery-report-${selectedMonth}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="min-h-screen">
+      <Header
+        onOpenCatalog={() => setCatalogOpen(true)}
+        totalItems={totalItems}
+        onDeleteMonth={handleDeleteMonth}
+        showDelete={availableMonths.length > 1}
+        onOpenApiKeySettings={() => setApiKeySettingsOpen(true)}
+      />
+
+      {/* Mobile FAB with premium design */}
+      <motion.div
+        className="sm:hidden fixed bottom-6 right-6 z-50"
+        initial={{ scale: 0, rotate: -180 }}
+        animate={{ scale: 1, rotate: 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      >
+        <PremiumButton
+          variant="primary"
+          size="icon"
+          onClick={() => setCatalogOpen(true)}
+          icon={<Sparkles className="h-7 w-7" />}
+          className="w-14 h-14 shadow-2xl shadow-primary-500/40 rounded-full"
+        />
+      </motion.div>
+
+      <MonthSelector
+        selectedMonth={selectedMonth}
+        availableMonths={availableMonths}
+        onMonthChange={setSelectedMonth}
+        onAddMonth={handleAddNewMonth}
+      />
+
+      <main className="max-w-7xl mx-auto px-4 py-6 md:py-8">
+        {/* Monthly List Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <PremiumCard variant="gradient" padding="lg" className="mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <motion.h2
+                  className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-gray-900 via-primary-800 to-gray-900 dark:from-white dark:via-primary-300 dark:to-white bg-clip-text text-transparent"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  {new Date(
+                    parseInt(selectedMonth.split("-")[0]),
+                    parseInt(selectedMonth.split("-")[1]) - 1
+                  ).toLocaleDateString(
+                    "en-US",
+                    { month: "long", year: "numeric" }
+                  )}
+                </motion.h2>
+                <motion.p
+                  className="text-gray-600 dark:text-gray-300 mt-2 flex items-center gap-2 flex-wrap"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-primary-100 to-violet-100 dark:from-primary-900/40 dark:to-violet-900/40 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800">
+                    {currentMonthItems.filter(i => !i.checked).length} to buy
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
+                    {currentMonthItems.filter(i => i.checked).length} completed
+                  </span>
+                </motion.p>
+                <motion.div
+                  className="mt-3 flex items-center gap-3 flex-wrap"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-xs text-gray-500 dark:text-gray-400 font-medium">Monthly Budget:</label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        placeholder="Set total"
+                        value={monthTotalBudget || ""}
+                        onChange={(e) =>
+                          handleSetTotalBudget(e.target.value === "" ? undefined : parseFloat(e.target.value))
+                        }
+                        className="w-28 px-3 py-1.5 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                      />
+                      {monthTotalBudget && (
+                        <motion.button
+                          onClick={() => handleSetTotalBudget(undefined)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-red-500 hover:text-red-600"
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 0.4 }}
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </motion.button>
+                      )}
+                    </div>
+                  </div>
+                  {monthTotalBudget && (
+                    <motion.span
+                      className="text-sm font-bold text-purple-600 dark:text-purple-400 inline-flex items-center gap-1 px-2 py-1 bg-purple-100 dark:bg-purple-900/30 rounded-full"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.4 }}
+                    >
+                      ₹{monthTotalBudget.toFixed(0)}
+                    </motion.span>
+                  )}
+                </motion.div>
+              </div>
+
+              <motion.div
+                className="flex gap-2"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                {currentMonthItems.length > 0 && (
+                  <>
+                    <PremiumButton
+                      variant="danger"
+                      size="sm"
+                      onClick={() => {
+                        if (confirm("Clear all items for this month?")) {
+                          clearMonth(selectedMonth);
+                        }
+                      }}
+                      icon={<Trash2 className="w-4 h-4" />}
+                    >
+                      Clear All
+                    </PremiumButton>
+                    <PremiumButton
+                      variant="success"
+                      size="sm"
+                      onClick={handleExportList}
+                      icon={<Download className="w-4 h-4" />}
+                    >
+                      Export 📋
+                    </PremiumButton>
+                  </>
+                )}
+              </motion.div>
+            </div>
+          </PremiumCard>
+        </motion.div>
+
+        {/* Monthly List */}
+        <MonthlyList
+          items={currentMonthItems}
+          onToggle={(id) => toggleChecked(selectedMonth, id)}
+          onRemove={(id) => removeItem(selectedMonth, id)}
+          onUpdateQuantity={(id, quantity) => updateItem(selectedMonth, id, { quantity })}
+          onUpdatePrice={(id, price) => {
+            updateItem(selectedMonth, id, { price });
+            // Save price to global item prices store using catalogItemId
+            if (price !== undefined) {
+              const item = currentMonthItems.find((i) => i.id === id);
+              if (item?.catalogItemId) {
+                setItemPrice(item.catalogItemId, price);
+              }
+            }
+          }}
+        />
+      </main>
+
+      {/* Empty State for no months - handled by list component */}
+
+      {/* Catalog Modal */}
+      <GroceryCatalog
+        isOpen={catalogOpen}
+        onClose={() => setCatalogOpen(false)}
+        onAddItem={handleAddItem}
+        itemPrices={itemPrices}
+      />
+
+      {/* Toast Notification */}
+      <Toast message={toast.message} isVisible={toast.visible} onClose={() => setToast({ ...toast, visible: false })} />
+
+      {/* API Key Settings Modal */}
+      <ApiKeySettings
+        isOpen={apiKeySettingsOpen}
+        onClose={() => setApiKeySettingsOpen(false)}
+      />
+
+      {/* Delete Month Confirmation */}
+      <ConfirmDialog
+        isOpen={deleteDialogOpen}
+        title="Delete Month"
+        message={`Are you sure you want to delete ${new Date(
+          parseInt(selectedMonth.split("-")[0]),
+          parseInt(selectedMonth.split("-")[1]) - 1
+        ).toLocaleDateString("en-US", { month: "long", year: "numeric" })}? This will remove all items for this month and cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={confirmDeleteMonth}
+        onCancel={() => setDeleteDialogOpen(false)}
+        variant="danger"
+      />
+    </div>
+  );
+}

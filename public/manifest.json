@@ -1,0 +1,19 @@
+{
+  "name": "MonthBasket - Smart Grocery Planner",
+  "short_name": "MonthBasket",
+  "description": "Organize your monthly grocery shopping with AI-powered categorization",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#9333ea",
+  "orientation": "portrait-primary",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
