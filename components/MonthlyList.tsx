@@ -82,6 +82,7 @@ export default function MonthlyList({
   if (items.length === 0) {
     return (
       <motion.div
+        data-testid="empty-monthly-list"
         variants={fadeInUp}
         initial="hidden"
         animate="visible"
@@ -127,7 +128,7 @@ export default function MonthlyList({
           animate={{ opacity: 1 }}
           className="opacity-60"
         >
-          <h4 className="text-sm font-bold text-primary-600 dark:text-primary-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <h4 data-testid="section-completed" className="text-sm font-bold text-primary-600 dark:text-primary-400 uppercase tracking-wider mb-3 flex items-center gap-2">
             <Check className="w-4 h-4" />
             Completed ({completedItems.length})
           </h4>
@@ -135,6 +136,7 @@ export default function MonthlyList({
             {completedItems.map((item, index) => (
               <PremiumCard
                 key={item.id}
+                data-testid={`monthly-item-${item.id}`}
                 variant={item.checked ? "minimal" : "default"}
                 padding="none"
                 className="group"
@@ -149,6 +151,7 @@ export default function MonthlyList({
                 >
                   <div className="flex items-start gap-3">
                     <motion.button
+                      data-testid={`toggle-item-${item.id}`}
                       onClick={() => onToggle(item.id)}
                       className={`mt-1 flex-shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${
                         item.checked
@@ -176,6 +179,7 @@ export default function MonthlyList({
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
                           <motion.p
+                            data-testid={`item-name-${item.id}`}
                             className={`font-semibold text-gray-900 dark:text-white truncate ${
                               item.checked ? "line-through text-gray-400 dark:text-gray-500" : ""
                             }`}
@@ -188,6 +192,7 @@ export default function MonthlyList({
                             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                               {item.price && (
                                 <motion.span
+                                  data-testid={`item-price-${item.id}`}
                                   className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-purple-100 to-violet-100 dark:from-purple-900/40 dark:to-violet-900/40 text-purple-700 dark:text-purple-400 text-xs font-medium rounded-full border border-purple-200 dark:border-violet-800"
                                   initial={{ opacity: 0, scale: 0.9 }}
                                   animate={{ opacity: 1, scale: 1 }}
@@ -197,6 +202,7 @@ export default function MonthlyList({
                               )}
                               {item.quantity && (
                                 <motion.span
+                                  data-testid={`item-quantity-${item.id}`}
                                   className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 text-xs font-medium rounded-full border border-blue-200 dark:border-blue-800"
                                   initial={{ opacity: 0, scale: 0.9 }}
                                   animate={{ opacity: 1, scale: 1 }}
@@ -237,6 +243,7 @@ export default function MonthlyList({
                               />
                             ) : (
                               <PremiumButton
+                                data-testid={`edit-quantity-${item.id}`}
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => startEditing(item)}
@@ -252,7 +259,7 @@ export default function MonthlyList({
                                 type="number"
                                 value={editPrice}
                                 onChange={(e) => setEditPrice(e.target.value)}
-                                placeholder="Price"
+                                placeholder="Price (₹)"
                                 className="w-16 px-2 py-1 text-xs sm:text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                                 autoFocus
                                 onBlur={() => savePriceEdit(item.id)}
@@ -263,6 +270,7 @@ export default function MonthlyList({
                               />
                             ) : (
                               <PremiumButton
+                                data-testid={`edit-price-${item.id}`}
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => startEditingPrice(item)}
@@ -275,6 +283,7 @@ export default function MonthlyList({
                           </div>
 
                           <motion.button
+                            data-testid={`delete-item-${item.id}`}
                             onClick={() => onRemove(item.id)}
                             className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors self-end"
                             whileHover={{ scale: 1.1 }}
@@ -294,7 +303,7 @@ export default function MonthlyList({
       )}
 
       {pendingItems.length > 0 && (
-        <div>
+        <div data-testid="section-to-buy">
           <h4 className="text-sm font-bold text-primary-600 dark:text-primary-400 uppercase tracking-wider mb-3 flex items-center gap-2">
             <Sparkles className="w-4 h-4" />
             To Buy ({pendingItems.length})
@@ -303,6 +312,7 @@ export default function MonthlyList({
             {pendingItems.map((item, index) => (
               <PremiumCard
                 key={item.id}
+                data-testid={`monthly-item-${item.id}`}
                 variant={item.checked ? "minimal" : "default"}
                 padding="none"
                 className="group"
@@ -317,6 +327,7 @@ export default function MonthlyList({
                 >
                   <div className="flex items-start gap-3">
                     <motion.button
+                      data-testid={`toggle-item-${item.id}`}
                       onClick={() => onToggle(item.id)}
                       className={`mt-1 flex-shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${
                         item.checked
@@ -344,6 +355,7 @@ export default function MonthlyList({
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
                           <motion.p
+                            data-testid={`item-name-${item.id}`}
                             className={`font-semibold text-gray-900 dark:text-white truncate ${
                               item.checked ? "line-through text-gray-400 dark:text-gray-500" : ""
                             }`}
@@ -356,6 +368,7 @@ export default function MonthlyList({
                             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                               {item.price && (
                                 <motion.span
+                                  data-testid={`item-price-${item.id}`}
                                   className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-purple-100 to-violet-100 dark:from-purple-900/40 dark:to-violet-900/40 text-purple-700 dark:text-purple-400 text-xs font-medium rounded-full border border-purple-200 dark:border-violet-800"
                                   initial={{ opacity: 0, scale: 0.9 }}
                                   animate={{ opacity: 1, scale: 1 }}
@@ -365,6 +378,7 @@ export default function MonthlyList({
                               )}
                               {item.quantity && (
                                 <motion.span
+                                  data-testid={`item-quantity-${item.id}`}
                                   className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 text-xs font-medium rounded-full border border-blue-200 dark:border-blue-800"
                                   initial={{ opacity: 0, scale: 0.9 }}
                                   animate={{ opacity: 1, scale: 1 }}
@@ -405,6 +419,7 @@ export default function MonthlyList({
                               />
                             ) : (
                               <PremiumButton
+                                data-testid={`edit-quantity-${item.id}`}
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => startEditing(item)}
@@ -420,7 +435,7 @@ export default function MonthlyList({
                                 type="number"
                                 value={editPrice}
                                 onChange={(e) => setEditPrice(e.target.value)}
-                                placeholder="Price"
+                                placeholder="Price (₹)"
                                 className="w-16 px-2 py-1 text-xs sm:text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                                 autoFocus
                                 onBlur={() => savePriceEdit(item.id)}
@@ -431,6 +446,7 @@ export default function MonthlyList({
                               />
                             ) : (
                               <PremiumButton
+                                data-testid={`edit-price-${item.id}`}
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => startEditingPrice(item)}
@@ -443,6 +459,7 @@ export default function MonthlyList({
                           </div>
 
                           <motion.button
+                            data-testid={`delete-item-${item.id}`}
                             onClick={() => onRemove(item.id)}
                             className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors self-end"
                             whileHover={{ scale: 1.1 }}
@@ -468,7 +485,7 @@ export default function MonthlyList({
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <PremiumCard variant="gradient" padding="lg" className="overflow-hidden relative">
+          <PremiumCard data-testid="monthly-totals" variant="gradient" padding="lg" className="overflow-hidden relative">
             <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-violet-500/5" />
             <div className="relative">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

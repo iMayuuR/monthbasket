@@ -1,93 +1,103 @@
-export type Category = "Grains" | "Pulses" | "Spices" | "Dairy" | "Snacks" | "Beverages" | "Other";
+export type Category = string; // Dynamic categories now
 
 export interface GroceryItem {
+  price?: number;
   id: number;
   marathiName: string;
   englishName: string;
-  category: Category;
+  category: string;
   typicalQuantity?: string;
+  suggestedQuantities?: string[]; // AI-suggested quantity options specific to this item
+  confidence?: number;
 }
 
-export const groceryCatalog: GroceryItem[] = [
-  // Grains & Cereals (7)
-  { id: 1, marathiName: "तांदूळ", englishName: "Rice", category: "Grains", typicalQuantity: "1 kg" },
-  { id: 6, marathiName: "बाजरी", englishName: "Pearl Millet (Bajra)", category: "Grains", typicalQuantity: "1 kg" },
-  { id: 7, marathiName: "ज्वारी", englishName: "Sorghum (Jowar)", category: "Grains", typicalQuantity: "1 kg" },
-  { id: 9, marathiName: "गहू", englishName: "Wheat Flour", category: "Grains", typicalQuantity: "1 kg" },
-  { id: 10, marathiName: "ओट्स", englishName: "Oats", category: "Grains", typicalQuantity: "500 gm" },
-  { id: 13, marathiName: "मैदा", englishName: "All-purpose Flour", category: "Grains", typicalQuantity: "1 kg" },
-  { id: 16, marathiName: "रवा", englishName: "Semolina (Rava)", category: "Grains", typicalQuantity: "500 gm" },
+// Get catalog from localStorage or return base items (permanent items that cannot be removed)
+import { getBaseCatalog } from "./base-items";
 
-  // Pulses & Lentils (4)
-  { id: 2, marathiName: "तूरडाळ", englishName: "Toor Dal (Pigeon Pea)", category: "Pulses", typicalQuantity: "1 kg" },
-  { id: 3, marathiName: "मुगडाळ", englishName: "Moong Dal (Green Gram)", category: "Pulses", typicalQuantity: "1 kg" },
-  { id: 4, marathiName: "साल काढलेली मुगडाळ", englishName: "Split Moong Dal (Hulled)", category: "Pulses", typicalQuantity: "500 gm" },
-  { id: 20, marathiName: "बेसन", englishName: "Gram Flour (Besan)", category: "Pulses", typicalQuantity: "500 gm" },
+export function getCatalog(): GroceryItem[] {
+  if (typeof window !== "undefined") {
+    const stored = localStorage.getItem("ai-catalog");
+    if (stored) {
+      try {
+        const storedCatalog = JSON.parse(stored);
+        // Merge with base items, avoiding duplicates by ID
+        const baseItems = getBaseCatalog();
+        const baseIds = new Set(baseItems.map(item => item.id));
+        // Filter out stored items that have same ID as base items (to avoid duplicates)
+        const filteredStored = (storedCatalog as GroceryItem[]).filter((item: GroceryItem) => !baseIds.has(item.id));
+        // Return base items + filtered stored items
+        return [...baseItems, ...filteredStored];
+      } catch (e) {
+        console.error("Failed to parse catalog:", e);
+        // Return base items if storage is corrupted
+        return getBaseCatalog();
+      }
+    }
+  }
+  // Return base items if nothing in storage
+  return getBaseCatalog();
+}
 
-  // Spices & Seasonings (5)
-  { id: 5, marathiName: "खारी", englishName: "Baking Soda", category: "Spices", typicalQuantity: "100 gm" },
-  { id: 18, marathiName: "मीठ", englishName: "Salt", category: "Spices", typicalQuantity: "1 kg" },
-  { id: 19, marathiName: "हिंग", englishName: "Asafoetida (Hing)", category: "Spices", typicalQuantity: "50 gm" },
-  { id: 21, marathiName: "तिखट", englishName: "Red Chili Powder", category: "Spices", typicalQuantity: "200 gm" },
-  { id: 31, marathiName: "हळद पावडर", englishName: "Turmeric Powder", category: "Spices", typicalQuantity: "200 gm" },
+// Save catalog to localStorage (exclude base items as they are permanent)
 
-  // Dairy (4)
-  { id: 8, marathiName: "मखाणे", englishName: "Butter", category: "Dairy", typicalQuantity: "200 gm" },
-  { id: 22, marathiName: "तूप", englishName: "Ghee (Clarified Butter)", category: "Dairy", typicalQuantity: "1 bottle" },
-  { id: 25, marathiName: "दुध पावडर", englishName: "Milk Powder", category: "Dairy", typicalQuantity: "1 kg" },
-  { id: 29, marathiName: "दूध", englishName: "Milk", category: "Dairy", typicalQuantity: "1 litre" },
+export function saveCatalog(catalog: GroceryItem[]) {
+  if (typeof window !== "undefined") {
+    const baseItems = getBaseCatalog();
+    const baseIds = new Set(baseItems.map(item => item.id));
+    // Only save non-base items (items that can be removed)
+    const nonBaseCatalog = catalog.filter(item => !baseIds.has(item.id));
+    localStorage.setItem("ai-catalog", JSON.stringify(nonBaseCatalog));
+  }
+}
 
-  // Snacks (4)
-  { id: 11, marathiName: "Classic लहान पोहे", englishName: "Classic Small Poha", category: "Snacks", typicalQuantity: "500 gm" },
-  { id: 12, marathiName: "पोहे", englishName: "Poha (Flattened Rice)", category: "Snacks", typicalQuantity: "500 gm" },
-  { id: 17, marathiName: "शेंगदाणे", englishName: "Shingada (Flattened Rice)", category: "Snacks", typicalQuantity: "500 gm" },
-  { id: 33, marathiName: "बिस्किट", englishName: "Biscuits", category: "Snacks", typicalQuantity: "1 packet" },
+// Get dynamic categories from catalog
+export function getDynamicCategories(): string[] {
+  const catalog = getCatalog();
+  const cats = [...new Set(catalog.map(item => item.category))];
+  // Ensure "Other" is always present
+  if (!cats.includes("Other")) {
+    cats.push("Other");
+  }
+  return cats.sort();
+}
 
-  // Beverages (2)
-  { id: 14, marathiName: "चहापावडर", englishName: "Tea Powder", category: "Beverages", typicalQuantity: "250 gm" },
-  { id: 24, marathiName: "कॉफी", englishName: "Coffee", category: "Beverages", typicalQuantity: "100 gm" },
-
-  // Spices (powders, etc.)
-  { id: 15, marathiName: "साखर", englishName: "Sugar", category: "Spices", typicalQuantity: "1 kg" },
-
-  // Other / Miscellaneous (6)
-  { id: 23, marathiName: "कोकोनट", englishName: "Coconut", category: "Other", typicalQuantity: "1 piece" },
-  { id: 26, marathiName: "बिमबार", englishName: "Baking Powder", category: "Other", typicalQuantity: "100 gm" },
-  { id: 27, marathiName: "मेडिमिक्स", englishName: "Medicines", category: "Other", typicalQuantity: "as needed" },
-  { id: 28, marathiName: "ग्लुको", englishName: "Glucose", category: "Other", typicalQuantity: "200 gm" },
-  { id: 30, marathiName: "हापुस", englishName: "Alphonso Mango", category: "Other", typicalQuantity: "1 dozen" },
-  { id: 32, marathiName: "तेल", englishName: "Cooking Oil", category: "Other", typicalQuantity: "1 litre" },
-];
-
-export const categories: Category[] = ["Grains", "Pulses", "Spices", "Dairy", "Snacks", "Beverages", "Other"];
-
-export const getCategoryIcon = (category: Category): string => {
-  const icons: Record<Category, string> = {
-    Grains: "🌾",
-    Pulses: "🫘",
-    Spices: "🌶️",
-    Dairy: "🥛",
-    Snacks: "🍪",
-    Beverages: "☕",
-    Other: "📦",
+export const getCategoryIcon = (category: string): string => {
+  const icons: Record<string, string> = {
+    "Grains": "🌾",
+    "Pulses": "🫘",
+    "Spices": "🌶️",
+    "Dairy": "🥛",
+    "Snacks": "🍪",
+    "Beverages": "☕",
+    "Oils": "🛢️",
+    "Vegetables": "🥬",
+    "Fruits": "🍎",
+    "Personal Care": "🧴",
+    "Household": "🏠",
+    "Other": "📦",
   };
-  return icons[category];
+  return icons[category] || "📦";
 };
 
-export const getItemsByCategory = (): Record<Category, GroceryItem[]> => {
-  const grouped: Record<Category, GroceryItem[]> = {
-    Grains: [],
-    Pulses: [],
-    Spices: [],
-    Dairy: [],
-    Snacks: [],
-    Beverages: [],
-    Other: [],
-  };
+export const getItemsByCategory = (): Record<string, GroceryItem[]> => {
+  const catalog = getCatalog();
+  const grouped: Record<string, GroceryItem[]> = {};
 
-  groceryCatalog.forEach((item) => {
+  catalog.forEach((item) => {
+    if (!grouped[item.category]) {
+      grouped[item.category] = [];
+    }
     grouped[item.category].push(item);
   });
 
   return grouped;
 };
+
+export const findItemById = (id: number): GroceryItem | undefined => {
+  const catalog = getCatalog();
+  return catalog.find(item => item.id === id);
+};
+
+// NOTE: Do not use this static constant - it only computes once at import time
+// Use getDynamicCategories() to get fresh categories
+// export const categories = getDynamicCategories();

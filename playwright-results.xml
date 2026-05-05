@@ -1,0 +1,46 @@
+<testsuites id="" name="" tests="1" failures="0" skipped="0" errors="1" time="35.742183">
+<testsuite name="navigation.spec.ts" timestamp="2026-05-04T19:27:42.864Z" hostname="chromium" tests="1" failures="0" skipped="0" time="16.315" errors="1">
+<testcase name="Home Page Navigation › should open catalog on Add Items click" classname="navigation.spec.ts" time="16.315">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|test-results\navigation-Home-Page-Navig-1f07c--catalog-on-Add-Items-click-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|test-results\navigation-Home-Page-Navig-1f07c--catalog-on-Add-Items-click-chromium\video.webm]]
+
+[[ATTACHMENT|test-results\navigation-Home-Page-Navig-1f07c--catalog-on-Add-Items-click-chromium\error-context.md]]
+]]>
+</system-out>
+<error message="locator.waitFor: Timeout 5000ms exceeded." type="TimeoutError">
+<![CDATA[  [chromium] › navigation.spec.ts:26:7 › Home Page Navigation › should open catalog on Add Items click 
+
+    TimeoutError: locator.waitFor: Timeout 5000ms exceeded.
+    Call log:
+      - waiting for locator('[data-testid="mobile-fab"]') to be visible
+
+
+       at ..\pages\HomePage.ts:76
+
+      74 |     } catch (e) {
+      75 |       // Fallback to mobile FAB
+    > 76 |       await this.mobileFab.waitFor({ state: 'visible', timeout: 5000 });
+         |                            ^
+      77 |       await this.mobileFab.click();
+      78 |     }
+      79 |   }
+        at HomePage.clickAddItems (D:\grocery-list\tests\pages\HomePage.ts:76:28)
+        at D:\grocery-list\tests\e2e\navigation.spec.ts:27:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\..\test-results\navigation-Home-Page-Navig-1f07c--catalog-on-Add-Items-click-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\..\test-results\navigation-Home-Page-Navig-1f07c--catalog-on-Add-Items-click-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\..\test-results\navigation-Home-Page-Navig-1f07c--catalog-on-Add-Items-click-chromium\error-context.md
+]]>
+</error>
+</testcase>
+</testsuite>
+</testsuites>

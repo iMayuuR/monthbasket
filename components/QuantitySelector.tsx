@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { GroceryItem } from "@/lib/grocery-data";
+import { getSmartQuantitySuggestions } from "@/lib/smart-quantities";
 
 interface QuantitySelectorProps {
   isOpen: boolean;
@@ -41,19 +42,37 @@ const MARATHI_UNITS: Record<string, string[]> = {
 export default function QuantitySelector({ isOpen, item, onSelect, onClose }: QuantitySelectorProps) {
   if (!item) return null;
 
-  const isMarathiItem = MARATHI_UNITS[item.marathiName];
-  const quantities = isMarathiItem ? MARATHI_UNITS[item.marathiName] : COMMON_QUANTITIES;
+  // Use smart quantity suggestions (combines AI, user preferences, and category patterns)
+  const smartQuantities = getSmartQuantitySuggestions(item);
+
+  // Check if item uses Marathi units (for Gon/Shep hint)
+  const isMarathiItem = MARATHI_UNITS[item.marathiName] !== undefined;
+
+  // Add Marathi units if applicable
+  let allQuantities = [...smartQuantities];
+  if (isMarathiItem) {
+    const marathiUnits = MARATHI_UNITS[item.marathiName];
+    // Add Marathi units at the beginning if not already present
+    marathiUnits.forEach(unit => {
+      if (!allQuantities.includes(unit)) {
+        allQuantities.unshift(unit);
+      }
+    });
+  }
+
   const typicalQuantity = item.typicalQuantity || "";
 
-  // Add typical quantity to list if not present
-  const allQuantities = typicalQuantity && !quantities.includes(typicalQuantity)
-    ? [typicalQuantity, ...quantities]
-    : quantities;
+  // Add typical quantity to list if not present (ensure it's at the front)
+  let finalQuantities = [...allQuantities];
+  if (typicalQuantity && !finalQuantities.includes(typicalQuantity)) {
+    finalQuantities.unshift(typicalQuantity);
+  }
 
   return (
     <AnimatePresence>
       {isOpen && (
         <motion.div
+          data-testid="quantity-selector-modal"
           className="fixed inset-0 z-[60] flex items-center justify-center p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -70,6 +89,7 @@ export default function QuantitySelector({ isOpen, item, onSelect, onClose }: Qu
 
           {/* Modal */}
           <motion.div
+            data-testid="quantity-selector-content"
             className="relative w-full max-w-[90vw] sm:max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden"
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -77,10 +97,10 @@ export default function QuantitySelector({ isOpen, item, onSelect, onClose }: Qu
           >
             <div className="p-4 sm:p-6">
               <div className="text-center mb-3 sm:mb-4">
-                <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
+                <h3 data-testid="quantity-selector-title" className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
                   Select Quantity
                 </h3>
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
+                <p data-testid="quantity-selector-item-name" className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
                   {item.marathiName} ({item.englishName})
                 </p>
                 {isMarathiItem && (
@@ -91,10 +111,11 @@ export default function QuantitySelector({ isOpen, item, onSelect, onClose }: Qu
               </div>
 
               {/* Quick quantity grid */}
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-1 sm:gap-2 mb-4 max-h-48 sm:max-h-64 overflow-y-auto">
+              <div data-testid="quantity-options-grid" className="grid grid-cols-3 sm:grid-cols-4 gap-1 sm:gap-2 mb-4 max-h-48 sm:max-h-64 overflow-y-auto">
                 {allQuantities.map((qty, idx) => (
                   <motion.button
                     key={qty}
+                    data-testid={`quantity-option-${qty.replace(/\s/g, '-').replace(/[^a-zA-Z0-9-]/g, '').replace('½', 'half').replace('¼', 'quarter')}`}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.02 }}
@@ -113,8 +134,9 @@ export default function QuantitySelector({ isOpen, item, onSelect, onClose }: Qu
                 </label>
                 <div className="flex gap-2">
                   <input
+                    data-testid="custom-quantity-input"
                     type="text"
-                    placeholder="e.g., 1 kg, a=[], 1 Gon..."
+                    placeholder="e.g., 1 kg, 500 gm, 1 Gon..."
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         const value = e.currentTarget.value.trim();
@@ -127,6 +149,7 @@ export default function QuantitySelector({ isOpen, item, onSelect, onClose }: Qu
                     autoFocus
                   />
                   <button
+                    data-testid="add-custom-quantity"
                     onClick={() => {
                       const input = document.querySelector('input[type="text"]') as HTMLInputElement;
                       if (input?.value.trim()) {
@@ -141,6 +164,7 @@ export default function QuantitySelector({ isOpen, item, onSelect, onClose }: Qu
               </div>
 
               <button
+                data-testid="cancel-quantity-selector"
                 onClick={onClose}
                 className="w-full mt-4 px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 text-sm font-medium transition-colors"
               >

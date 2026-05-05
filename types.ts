@@ -1,6 +1,7 @@
-export type Category = "Grains" | "Pulses" | "Spices" | "Dairy" | "Snacks" | "Beverages" | "Other";
+export type Category = string; // Dynamic categories
 
 export interface GroceryItem {
+  price?: number;
   id: number;
   marathiName: string;
   englishName: string;

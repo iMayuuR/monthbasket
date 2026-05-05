@@ -1,0 +1,50 @@
+export const testCatalog = [
+  {
+    id: 1,
+    marathiName: 'तांदूळ',
+    englishName: 'Rice',
+    category: 'Grains',
+    typicalQuantity: '1 kg',
+    suggestedQuantities: ['500 gm', '1 kg', '2 kg', '5 kg'],
+    confidence: 0.95,
+  },
+  {
+    id: 2,
+    marathiName: 'गहू',
+    englishName: 'Wheat Flour',
+    category: 'Grains',
+    typicalQuantity: '1 kg',
+    suggestedQuantities: ['500 gm', '1 kg', '2 kg'],
+    confidence: 0.92,
+  },
+  {
+    id: 3,
+    marathiName: 'मसाला',
+    englishName: 'Spices Mix',
+    category: 'Spices',
+    typicalQuantity: '100 gm',
+    suggestedQuantities: ['50 gm', '100 gm', '250 gm'],
+    confidence: 0.88,
+  },
+  {
+    id: 4,
+    marathiName: 'दूध',
+    englishName: 'Milk',
+    category: 'Dairy',
+    typicalQuantity: '1 litre',
+    suggestedQuantities: ['500 ml', '1 litre', '2 litre'],
+    confidence: 0.90,
+  },
+];
+
+export const testMonthlyItem = {
+  catalogItemId: 1,
+  id: Date.now(),
+  name: 'Rice',
+  marathiName: 'तांदूळ',
+  category: 'Grains',
+  quantity: '1 kg',
+  price: 80,
+  checked: false,
+  addedAt: new Date().toISOString(),
+};

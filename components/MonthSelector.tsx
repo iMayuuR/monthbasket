@@ -28,12 +28,13 @@ export default function MonthSelector({
 
   return (
     <motion.div
-      className="sticky top-16 z-30 px-4 py-3 bg-white/30 dark:from-gray-900/40 dark:to-gray-800/30 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50"
+      data-testid="month-selector"
+      className="sticky top-14 sm:top-16 z-30 px-2 sm:px-4 py-2 sm:py-3 bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 overflow-x-auto"
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+      <div className="flex gap-1.5 sm:gap-2 min-w-max">
         <AnimatePresence mode="popLayout">
           {sortedMonths.map((month, index) => (
             <motion.button
@@ -49,21 +50,21 @@ export default function MonthSelector({
                 damping: 25,
                 delay: index * 0.03
               }}
-              className={`relative px-4 py-2.5 rounded-xl font-semibold transition-all whitespace-nowrap overflow-hidden ${
+              className={`relative px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl font-semibold transition-all whitespace-nowrap ${
                 selectedMonth === month
-                  ? "bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-lg shadow-primary-500/30"
-                  : "bg-white/80 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-primary-500/50 dark:hover:border-primary-500/50 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50/50 dark:hover:bg-primary-900/20 shadow-sm hover:shadow-md"
+                  ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-lg shadow-purple-500/30 text-xs sm:text-sm"
+                  : "bg-white/90 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 border border-gray-200/80 dark:border-gray-700/80 hover:border-violet-400/50 dark:hover:border-violet-500/50 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50/50 dark:hover:bg-violet-900/20 shadow-sm hover:shadow-md text-xs sm:text-sm"
               }`}
             >
               {selectedMonth === month && (
                 <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-primary-500 to-primary-700 rounded-xl"
+                  className="absolute inset-0 bg-gradient-to-r from-violet-600 to-purple-600 rounded-xl"
                   layoutId="activeTab"
                   style={{ zIndex: 0 }}
                   transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 />
               )}
-              <span className="relative z-10 text-sm flex items-center gap-1.5">
+              <span className="relative z-10 flex items-center gap-1">
                 {selectedMonth === month && (
                   <motion.div
                     className="w-1 h-1 bg-white rounded-full"
@@ -80,18 +81,18 @@ export default function MonthSelector({
 
         <motion.button
           onClick={onAddMonth}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-semibold bg-white/80 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-primary-500/50 dark:hover:border-primary-500/50 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50/50 dark:hover:bg-primary-900/20 transition-all shadow-sm hover:shadow-md"
+          className="flex items-center gap-1 px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl font-semibold bg-white/90 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 border border-gray-200/80 dark:border-gray-700/80 hover:border-violet-400/50 dark:hover:border-violet-500/50 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50/50 dark:hover:bg-violet-900/20 transition-all shadow-sm hover:shadow-md text-xs sm:text-sm"
           whileHover={{ scale: 1.03, y: -2 }}
           whileTap={{ scale: 0.97 }}
         >
           <motion.span
-            className="text-lg"
+            className="text-sm"
             animate={{ rotate: [0, 90, 0] }}
             transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 2 }}
           >
             ➕
           </motion.span>
-          <span className="text-sm">New Month</span>
+          <span className="hidden xs:inline">New Month</span>
         </motion.button>
       </div>
     </motion.div>

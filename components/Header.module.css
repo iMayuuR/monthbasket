@@ -3,3 +3,9 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
+
+@media (max-width: 640px) {
+  .header {
+    padding: 0.5rem 0.75rem;
+  }
+}

@@ -36,6 +36,7 @@ export default function ThemeToggle() {
   return (
     <motion.button
       onClick={toggleTheme}
+      aria-label="theme toggle"
       className="relative w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 border-2 border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all group"
       whileHover={{ scale: 1.05, rotate: 5 }}
       whileTap={{ scale: 0.95 }}
