@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { PremiumButton } from "./ui/PremiumButton";
-import { AlertCircle, CheckCircle2, RefreshCw, database, Wifi, WifiOff } from "lucide-react";
+import { AlertCircle, CheckCircle2, RefreshCw, Database, Wifi, WifiOff } from "lucide-react";
 
 interface SyncDiagnosticProps {
   userId: string;
@@ -18,6 +18,8 @@ export default function SyncDiagnostic({ userId, onForcePull, onForcePush }: Syn
   const [results, setResults] = useState<{
     connection: boolean;
     auth: boolean;
+    monthsTable: boolean;
+    catalogTable: boolean;
     pricesTable: boolean;
     realtime: boolean;
     writeAccess: boolean;
@@ -106,6 +108,8 @@ export default function SyncDiagnostic({ userId, onForcePull, onForcePush }: Syn
         monthsTable: false,
         catalogTable: false,
         pricesTable: false,
+        realtime: false,
+        writeAccess: false,
         error: (err as Error).message,
       });
     }
