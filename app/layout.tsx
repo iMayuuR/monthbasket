@@ -10,17 +10,41 @@ export const metadata: Metadata = {
   description: "Organize your monthly grocery shopping with AI-powered categorization",
   keywords: ["grocery", "shopping", "list", "monthly", "planner", "marathi", "ai", "categorization"],
   icons: {
-    icon: "/favicon.svg",
-    apple: "/favicon.svg",
+    icon: "/favicon.png",
+    apple: "/icon-512.png",
+    shortcut: "/favicon.png",
   },
   manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "MonthBasket",
+    startupImage: [
+      {
+        url: "/splash.png",
+        media: "(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)",
+      },
+      {
+        url: "/splash.png",
+        media: "(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)",
+      },
+      {
+        url: "/splash.png",
+        media: "(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)",
+      },
+      {
+        url: "/splash.png",
+        media: "(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)",
+      },
+    ],
+  },
 };
 
 export const viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#9333ea",
+  themeColor: "#6366f1",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -21,6 +21,8 @@ import { PremiumCard } from "@/components/ui/PremiumCard";
 import { PremiumButton } from "@/components/ui/PremiumButton";
 import { Trash2, Download, ShoppingBag } from "lucide-react";
 
+import { PremiumSplashScreen } from "@/components/PremiumSplashScreen";
+
 const MONTH_KEY = (year: number, month: number) => `${year}-${month.toString().padStart(2, "0")}`;
 
 export default function HomePage() {
@@ -233,15 +235,7 @@ export default function HomePage() {
 
   // Show loading while checking auth
   if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-100 via-purple-50 to-fuchsia-100 dark:from-violet-950 dark:via-purple-950 dark:to-fuchsia-950">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          className="w-12 h-12 border-4 border-violet-500 border-t-transparent rounded-full"
-        />
-      </div>
-    );
+    return <PremiumSplashScreen />;
   }
 
   // Show login screen if not authenticated

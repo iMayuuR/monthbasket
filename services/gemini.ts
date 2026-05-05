@@ -83,19 +83,7 @@ export function saveGeminiApiKey(apiKey: string) {
 
 export function getGeminiApiKey(): string | null {
   if (typeof window !== "undefined") {
-    // First try the new key
-    let key = localStorage.getItem(GEMINI_STORAGE_KEY);
-    // If not found, check for old hardcoded key (migration from buggy version)
-    if (!key) {
-      const oldKey = localStorage.getItem("AIzaSyC0mmUwDA_fKHEWpyJHMwJFillZfqgZEic");
-      if (oldKey) {
-        // Migrate to new key
-        localStorage.setItem(GEMINI_STORAGE_KEY, oldKey);
-        localStorage.removeItem("AIzaSyC0mmUwDA_fKHEWpyJHMwJFillZfqgZEic");
-        key = oldKey;
-      }
-    }
-    return key;
+    return localStorage.getItem(GEMINI_STORAGE_KEY);
   }
   return null;
 }

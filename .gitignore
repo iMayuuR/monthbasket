@@ -40,3 +40,23 @@ test-results/
 Thumbs.db
 *.bak
 *.orig
+
+# Database and Setup
+supabase-setup.sql
+*.sql
+
+# Local Notes and Temporary
+list.txt
+*.tsbuildinfo
+
+# Test Results
+playwright-results.json
+playwright-results.xml
+*.xml
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!manifest.json
+!next.config.js
+!vercel.json

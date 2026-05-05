@@ -9,5 +9,5 @@ export const supabase: SupabaseClient | null = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey) 
   : null;
 
-export const SIMPLE_PASSWORD = 'jiomart123';
+export const SIMPLE_PASSWORD = process.env.NEXT_PUBLIC_APP_PASSWORD || 'jiomart123';
 export const AUTH_KEY = 'monthbasket_auth';
