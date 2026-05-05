@@ -40,11 +40,11 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
         <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-gray-200/50 dark:border-gray-700/50">
           <div className="text-center mb-8">
             <motion.div
-              className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl mb-4 shadow-lg"
+              className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-violet-500/10 to-purple-600/10 rounded-2xl mb-4 shadow-xl border border-violet-500/20 overflow-hidden"
               animate={{ scale: [1, 1.05, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
             >
-              <span className="text-3xl">🛒</span>
+              <img src="/favicon.png" alt="MonthBasket Logo" className="w-full h-full object-cover" />
             </motion.div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
               MonthBasket

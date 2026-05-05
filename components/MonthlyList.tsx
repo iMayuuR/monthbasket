@@ -90,15 +90,15 @@ export default function MonthlyList({
       >
         <div className="relative mb-6">
           <motion.div
-            className="text-8xl"
+            className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-indigo-500/10 to-violet-500/10 rounded-3xl border border-indigo-500/20 shadow-2xl overflow-hidden flex items-center justify-center"
             animate={{ y: [0, -15, 0] }}
-            transition={{ duration: 3, repeat: Infinity }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
           >
-            🛒
+            <img src="/favicon.png" alt="MonthBasket Logo" className="w-full h-full object-cover" />
           </motion.div>
           <motion.div
             className="absolute -bottom-2 -right-2 text-4xl"
-            animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
+            animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.2, 1] }}
             transition={{ repeat: Infinity, duration: 2 }}
           >
             ✨

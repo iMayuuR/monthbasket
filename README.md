@@ -1,4 +1,4 @@
-# 🛒 Grocery List - Monthly Planner
+# 🛍️ MonthBasket - Smart Grocery Planner
 
 A beautiful, responsive grocery list web app built with **Next.js 14**, **TypeScript**, **Tailwind CSS**, and **Framer Motion**. Organize your shopping by month with smooth animations and a premium user experience.
 

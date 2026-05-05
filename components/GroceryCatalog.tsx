@@ -496,14 +496,19 @@ export default function GroceryCatalog({ isOpen, onClose, onAddItem, itemPrices,
             {/* Header */}
             <div data-testid="catalog-header" className="px-3 py-3 xs:px-4 xs:py-4 sm:px-6 sm:py-5 border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-white to-primary-50/30 dark:from-gray-900 dark:to-primary-900/20">
               <div className="flex items-center justify-between gap-2 mb-3 xs:mb-4">
-                <motion.h2
-                  data-testid="catalog-title"
-                  className="text-lg xs:text-xl sm:text-2xl font-bold bg-gradient-to-r from-gray-900 via-primary-800 to-gray-900 dark:from-white dark:via-primary-300 dark:to-white bg-clip-text text-transparent truncate"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                >
-                  MonthBasket
-                </motion.h2>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg overflow-hidden border border-primary-500/20 shadow-sm">
+                    <img src="/favicon.png" alt="" className="w-full h-full object-cover" />
+                  </div>
+                  <motion.h2
+                    data-testid="catalog-title"
+                    className="text-lg xs:text-xl sm:text-2xl font-bold bg-gradient-to-r from-gray-900 via-primary-800 to-gray-900 dark:from-white dark:via-primary-300 dark:to-white bg-clip-text text-transparent truncate"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                  >
+                    MonthBasket
+                  </motion.h2>
+                </div>
                 <div className="flex items-center gap-1 xs:gap-2">
                   <PremiumButton
                     variant="secondary"
@@ -768,11 +773,11 @@ export default function GroceryCatalog({ isOpen, onClose, onAddItem, itemPrices,
                   transition={{ duration: 0.3 }}
                 >
                   <motion.div
-                    className="text-6xl mb-4"
-                    animate={{ y: [0, -10, 0] }}
-                    transition={{ duration: 2, repeat: Infinity }}
+                    className="w-20 h-20 bg-gradient-to-br from-indigo-500/10 to-violet-500/10 rounded-2xl border border-indigo-500/20 shadow-xl overflow-hidden flex items-center justify-center mb-6"
+                    animate={{ y: [0, -10, 0], rotate: [0, 5, -5, 0] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
                   >
-                    🔍
+                    <img src="/favicon.png" alt="" className="w-full h-full object-cover" />
                   </motion.div>
                   <p className="text-lg font-semibold text-gray-900 dark:text-white">No items found</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Try adjusting your search or category filter</p>
