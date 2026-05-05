@@ -15,9 +15,10 @@ interface HeaderProps {
   onDeleteMonth?: () => void;
   showDelete?: boolean;
   onOpenApiKeySettings?: () => void;
+  isSyncing?: boolean;
 }
 
-export default function Header({ onOpenCatalog, totalItems, onDeleteMonth, showDelete = false, onOpenApiKeySettings }: HeaderProps) {
+export default function Header({ onOpenCatalog, totalItems, onDeleteMonth, showDelete = false, onOpenApiKeySettings, isSyncing }: HeaderProps) {
   const [catalogCount, setCatalogCount] = useState<number>(0);
   const [mounted, setMounted] = useState(false);
 
@@ -87,6 +88,17 @@ export default function Header({ onOpenCatalog, totalItems, onDeleteMonth, showD
               </motion.span>
             </div>
           </div>
+          {isSyncing && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.5 }}
+              className="ml-2 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400 text-[10px] font-bold border border-primary-200 dark:border-primary-800"
+            >
+              <div className="w-1.5 h-1.5 rounded-full bg-primary-500 animate-pulse" />
+              Syncing
+            </motion.div>
+          )}
         </motion.div>
 
         <div className="flex items-center gap-1 sm:gap-2">

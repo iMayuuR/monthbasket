@@ -16,6 +16,27 @@ import { getBaseCatalog } from "./base-items";
 
 export function getCatalog(): GroceryItem[] {
   if (typeof window !== "undefined") {
+    // Migration: Check for old custom items and merge them if they exist
+    const oldCustom = localStorage.getItem("custom-grocery-items");
+    if (oldCustom) {
+      try {
+        const parsedOld = JSON.parse(oldCustom);
+        if (Array.isArray(parsedOld) && parsedOld.length > 0) {
+          // Merge it into the raw storage directly once
+          const existingAi = localStorage.getItem("ai-catalog");
+          const parsedAi = existingAi ? JSON.parse(existingAi) : [];
+          const merged = [...parsedAi, ...parsedOld];
+          // Remove duplicates by ID
+          const uniqueMerged = Array.from(new Map(merged.map((item: any) => [item.id, item])).values());
+          localStorage.setItem("ai-catalog", JSON.stringify(uniqueMerged));
+          localStorage.removeItem("custom-grocery-items");
+          localStorage.removeItem("ai-corrected-catalog"); // Also clean up this old key
+        }
+      } catch (e) {
+        console.error("Migration failed:", e);
+      }
+    }
+
     const stored = localStorage.getItem("ai-catalog");
     if (stored) {
       try {

@@ -110,7 +110,8 @@ export default function HomePage() {
   // Subscribe to changes from other devices
   useEffect(() => {
     if (isCloudEnabled && isAuthenticated) {
-      const unsubscribe = subscribeToChanges(() => {
+      const unsubscribe = subscribeToChanges((table) => {
+        showToast(`Cloud update received: ${table}`);
         refreshAllData();
       });
       return unsubscribe;
@@ -297,6 +298,23 @@ export default function HomePage() {
   }
 
   // Show login screen if not authenticated
+  const handleForcePush = async () => {
+    showToast("Force pushing data to cloud...");
+    await syncMonthsToCloud(itemsByMonth, budgets);
+    await syncPricesToCloud(itemPrices);
+    const catalog = getCatalog();
+    if (catalog.length > 0) {
+      await syncCatalogToCloud(catalog);
+    }
+    showToast("Cloud push complete!");
+  };
+
+  const handleForcePull = async () => {
+    showToast("Force pulling data from cloud...");
+    await refreshAllData();
+    showToast("Cloud pull complete!");
+  };
+
   if (!isAuthenticated) {
     return <LoginScreen onLoginSuccess={() => {}} />;
   }
@@ -309,6 +327,7 @@ export default function HomePage() {
         onDeleteMonth={handleDeleteMonth}
         showDelete={availableMonths.length > 1}
         onOpenApiKeySettings={() => setApiKeySettingsOpen(true)}
+        isSyncing={isSyncing}
       />
 
       {/* Mobile FAB with premium design */}
@@ -490,6 +509,7 @@ export default function HomePage() {
         itemPrices={itemPrices}
         onUpdateItemPrice={setItemPrice}
         onOpenApiKeySettings={() => setApiKeySettingsOpen(true)}
+        onSyncCatalog={syncCatalogToCloud}
       />
 
       {/* Toast Notification */}
@@ -499,6 +519,8 @@ export default function HomePage() {
       <ApiKeySettings
         isOpen={apiKeySettingsOpen}
         onClose={() => setApiKeySettingsOpen(false)}
+        onForcePull={handleForcePull}
+        onForcePush={handleForcePush}
       />
 
       {/* Delete Month Confirmation */}

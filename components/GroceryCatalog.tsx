@@ -20,14 +20,22 @@ interface GroceryCatalogProps {
   itemPrices: Record<number, number>; // Catalog item ID -> last used price
   onUpdateItemPrice?: (itemId: number, price: number) => void; // Callback to update item price
   onOpenApiKeySettings?: () => void; // Optional callback to open API key settings
+  onSyncCatalog?: (items: GroceryItem[]) => void; // Callback to sync catalog to cloud
 }
 
-export default function GroceryCatalog({ isOpen, onClose, onAddItem, itemPrices, onUpdateItemPrice, onOpenApiKeySettings }: GroceryCatalogProps) {
+export default function GroceryCatalog({ 
+  isOpen, 
+  onClose, 
+  onAddItem, 
+  itemPrices, 
+  onUpdateItemPrice, 
+  onOpenApiKeySettings,
+  onSyncCatalog 
+}: GroceryCatalogProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [showAddCustom, setShowAddCustom] = useState(false);
-  const [customItems, setCustomItems] = useState<GroceryItem[]>([]);
   const [catalogItems, setCatalogItems] = useState<GroceryItem[]>([]);
   const [isGeneratingCatalog, setIsGeneratingCatalog] = useState(false);
   const [newItem, setNewItem] = useState({
@@ -53,10 +61,6 @@ export default function GroceryCatalog({ isOpen, onClose, onAddItem, itemPrices,
   useEffect(() => {
     if (typeof window !== "undefined") {
       try {
-        const storedCustom = localStorage.getItem("custom-grocery-items");
-        if (storedCustom) {
-          setCustomItems(JSON.parse(storedCustom));
-        }
         // Load AI catalog
         const savedCatalog = getCatalog();
         if (savedCatalog.length > 0) {
@@ -86,10 +90,8 @@ export default function GroceryCatalog({ isOpen, onClose, onAddItem, itemPrices,
     }
   }, [isOpen]);
 
-  // Combine catalog and custom items
-  const allItems = useMemo(() => {
-    return [...catalogItems, ...customItems];
-  }, [catalogItems, customItems]);
+  // All items
+  const allItems = catalogItems;
 
   // Get dynamic categories
   const dynamicCategories = useMemo(() => {
@@ -150,6 +152,7 @@ export default function GroceryCatalog({ isOpen, onClose, onAddItem, itemPrices,
 
       setCatalogItems(catalogWithIds);
       saveCatalog(catalogWithIds);
+      onSyncCatalog?.([...catalogWithIds, ...customItems]);
 
       // Calculate final category distribution
       const categories = [...new Set(catalogWithIds.map(i => i.category))];
@@ -262,6 +265,7 @@ export default function GroceryCatalog({ isOpen, onClose, onAddItem, itemPrices,
 
       setCatalogItems(updatedCatalog);
       saveCatalog(updatedCatalog);
+      onSyncCatalog?.([...updatedCatalog, ...customItems]);
 
       alert(`Recategorized ${recategorized}/${otherItems.length} items!\n\nCheck the console for details.\n\nThese changes are saved and will persist.`);
     } catch (error) {
@@ -283,7 +287,8 @@ export default function GroceryCatalog({ isOpen, onClose, onAddItem, itemPrices,
       item.id === editingItem.id ? editingItem : item
     );
     setCatalogItems(updatedCatalog);
-    localStorage.setItem("ai-corrected-catalog", JSON.stringify(updatedCatalog));
+    saveCatalog(updatedCatalog);
+    onSyncCatalog?.([...updatedCatalog, ...customItems]);
 
     setEditingItem(null);
     setShowEditModal(false);
@@ -295,7 +300,8 @@ export default function GroceryCatalog({ isOpen, onClose, onAddItem, itemPrices,
 
     const updatedCatalog = catalogItems.filter(item => item.id !== itemId);
     setCatalogItems(updatedCatalog);
-    localStorage.setItem("ai-corrected-catalog", JSON.stringify(updatedCatalog));
+    saveCatalog(updatedCatalog);
+    onSyncCatalog?.([...updatedCatalog, ...customItems]);
     alert("Item deleted from catalog.");
   };
 
@@ -389,7 +395,7 @@ export default function GroceryCatalog({ isOpen, onClose, onAddItem, itemPrices,
     }
 
     // Generate unique ID (starting from 10000 to avoid conflict with fixed IDs)
-    const newId = Math.max(10000, ...customItems.map((i) => i.id), Date.now());
+    const newId = Math.max(10000, ...catalogItems.map((i) => i.id), Date.now());
 
     const custom: GroceryItem = {
       id: newId,
@@ -399,9 +405,10 @@ export default function GroceryCatalog({ isOpen, onClose, onAddItem, itemPrices,
       typicalQuantity: newItem.typicalQuantity || undefined,
     };
 
-    const updated = [...customItems, custom];
-    setCustomItems(updated);
-    localStorage.setItem("custom-grocery-items", JSON.stringify(updated));
+    const updated = [...catalogItems, custom];
+    setCatalogItems(updated);
+    saveCatalog(updated);
+    onSyncCatalog?.(updated);
 
     // Reset form
     setNewItem({

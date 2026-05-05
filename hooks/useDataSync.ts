@@ -14,28 +14,22 @@ export function useDataSync() {
     if (!isAuthenticated || !isSupabaseConfigured || !supabase) return;
     setIsSyncing(true);
     try {
-      for (const [monthKey, items] of Object.entries(monthsData)) {
-        const { data: existing } = await supabase
+      const upsertData = Object.entries(monthsData).map(([monthKey, items]) => ({
+        user_id: userId,
+        month_key: monthKey,
+        items: JSON.stringify(items),
+        budget: budgets[monthKey] || null,
+        updated_at: new Date().toISOString(),
+      }));
+
+      if (upsertData.length > 0) {
+        const { error } = await supabase
           .from("months")
-          .select("*")
-          .eq("user_id", userId)
-          .eq("month_key", monthKey)
-          .single();
-
-        const monthData = {
-          user_id: userId,
-          month_key: monthKey,
-          items: JSON.stringify(items),
-          budget: budgets[monthKey] || null,
-          updated_at: new Date().toISOString(),
-        };
-
-        if (existing?.id) {
-          await supabase.from("months").update(monthData).eq("id", existing.id);
-        } else {
-          await supabase.from("months").insert(monthData);
-        }
+          .upsert(upsertData, { onConflict: 'user_id,month_key' });
+        
+        if (error) throw error;
       }
+      
       setLastSyncTime(new Date().toISOString());
     } catch (error) {
       console.error("Sync months error:", error);
@@ -48,17 +42,21 @@ export function useDataSync() {
     if (!isAuthenticated || !isSupabaseConfigured || !supabase) return;
     setIsSyncing(true);
     try {
+      // For catalog, we delete and re-insert because there are no unique keys for items other than ID which might clash
+      // Alternatively, we could use upsert if we had a reliable unique key
       await supabase.from("catalog").delete().eq("user_id", userId);
+      
       if (catalogItems.length > 0) {
         const catalogData = catalogItems.map(item => ({
           user_id: userId,
-          marathi_name: item.marathi_name || item.marathiName,
-          english_name: item.english_name || item.englishName,
+          marathi_name: item.marathiName || item.marathi_name,
+          english_name: item.englishName || item.english_name,
           category: item.category,
-          typical_quantity: item.typical_quantity || item.typicalQuantity || "",
+          typical_quantity: item.typicalQuantity || item.typical_quantity || "",
           created_at: new Date().toISOString(),
         }));
-        await supabase.from("catalog").insert(catalogData);
+        const { error } = await supabase.from("catalog").insert(catalogData);
+        if (error) throw error;
       }
       setLastSyncTime(new Date().toISOString());
     } catch (error) {
@@ -72,23 +70,18 @@ export function useDataSync() {
     if (!isAuthenticated || !isSupabaseConfigured || !supabase) return;
     setIsSyncing(true);
     try {
-      const { data: existing } = await supabase
-        .from("prices")
-        .select("*")
-        .eq("user_id", userId)
-        .single();
-
       const pricesData = {
         user_id: userId,
         prices: JSON.stringify(prices),
         updated_at: new Date().toISOString(),
       };
 
-      if (existing?.id) {
-        await supabase.from("prices").update(pricesData).eq("id", existing.id);
-      } else {
-        await supabase.from("prices").insert(pricesData);
-      }
+      const { error } = await supabase
+        .from("prices")
+        .upsert(pricesData, { onConflict: 'user_id' });
+      
+      if (error) throw error;
+      
       setLastSyncTime(new Date().toISOString());
     } catch (error) {
       console.error("Sync prices error:", error);
@@ -145,28 +138,28 @@ export function useDataSync() {
     }
   }, [isAuthenticated, userId]);
 
-  const subscribeToChanges = useCallback((onUpdate: () => void) => {
+  const subscribeToChanges = useCallback((onUpdate: (table: string) => void) => {
     const client = supabase;
     if (!isAuthenticated || !isSupabaseConfigured || !client) return () => {};
 
     const monthsSubscription = client
       .channel('public:months')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'months', filter: `user_id=eq.${userId}` }, () => {
-        onUpdate();
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'months' }, () => {
+        onUpdate('months');
       })
       .subscribe();
 
     const pricesSubscription = client
       .channel('public:prices')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'prices', filter: `user_id=eq.${userId}` }, () => {
-        onUpdate();
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'prices' }, () => {
+        onUpdate('prices');
       })
       .subscribe();
 
     const catalogSubscription = client
       .channel('public:catalog')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'catalog', filter: `user_id=eq.${userId}` }, () => {
-        onUpdate();
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'catalog' }, () => {
+        onUpdate('catalog');
       })
       .subscribe();
 

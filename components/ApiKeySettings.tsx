@@ -4,13 +4,16 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getGeminiApiKey, saveGeminiApiKey, removeGeminiApiKey, isSystemKey } from "@/services/gemini";
 import { Sparkles } from "lucide-react";
+import SyncDiagnostic from "./SyncDiagnostic";
 
 interface ApiKeySettingsProps {
   isOpen: boolean;
   onClose: () => void;
+  onForcePull?: () => Promise<void>;
+  onForcePush?: () => Promise<void>;
 }
 
-export default function ApiKeySettings({ isOpen, onClose }: ApiKeySettingsProps) {
+export default function ApiKeySettings({ isOpen, onClose, onForcePull, onForcePush }: ApiKeySettingsProps) {
   const [apiKey, setApiKey] = useState("");
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
@@ -165,11 +168,17 @@ export default function ApiKeySettings({ isOpen, onClose }: ApiKeySettingsProps)
                   )}
                   <button
                     onClick={onClose}
-                    className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                    className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex-1"
                   >
                     Cancel
                   </button>
                 </div>
+
+                <SyncDiagnostic 
+                  userId="default_user" 
+                  onForcePull={onForcePull} 
+                  onForcePush={onForcePush} 
+                />
               </div>
             </div>
           </motion.div>
