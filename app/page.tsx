@@ -8,7 +8,7 @@ import { useItemPrices } from "@/hooks/useItemPrices";
 import { useAuth } from "@/hooks/useAuth";
 import { useDataSync } from "@/hooks/useDataSync";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { GroceryItem } from "@/lib/grocery-data";
+import { GroceryItem, saveCatalog, getCatalog } from "@/lib/grocery-data";
 import Header from "@/components/Header";
 import ApiKeySettings from "@/components/ApiKeySettings";
 import MonthSelector from "@/components/MonthSelector";
@@ -43,9 +43,19 @@ export default function HomePage() {
     visible: false,
   });
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [catalogVersion, setCatalogVersion] = useState(0); // Used to trigger catalog refresh
 
-  const { prices: itemPrices, setItemPrice } = useItemPrices();
-  const { isSyncing, syncMonthsToCloud, syncPricesToCloud, isCloudEnabled } = useDataSync();
+  const { prices: itemPrices, setItemPrice, setPrices } = useItemPrices();
+  const { 
+    isSyncing, 
+    syncMonthsToCloud, 
+    syncPricesToCloud, 
+    isCloudEnabled, 
+    loadMonthsFromCloud, 
+    loadPricesFromCloud,
+    loadCatalogFromCloud,
+    subscribeToChanges
+  } = useDataSync();
 
   const {
     value: monthlyLists,
@@ -57,7 +67,55 @@ export default function HomePage() {
     setTotalBudget,
     getMonthData,
     deleteMonth,
+    setValue: setMonthlyLists,
   } = useLocalStorage("grocery-monthly-lists", {});
+
+  // Function to reload all data from cloud
+  const refreshAllData = async () => {
+    try {
+      const { months, budgets } = await loadMonthsFromCloud();
+      if (Object.keys(months).length > 0) {
+        const newMonthlyLists: any = {};
+        Object.keys(months).forEach(key => {
+          newMonthlyLists[key] = {
+            items: months[key],
+            totalBudget: budgets[key]
+          };
+        });
+        setMonthlyLists(newMonthlyLists);
+      }
+
+      const prices = await loadPricesFromCloud();
+      if (Object.keys(prices).length > 0) {
+        setPrices(prices);
+      }
+
+      const cloudCatalog = await loadCatalogFromCloud();
+      if (cloudCatalog.length > 0) {
+        saveCatalog(cloudCatalog);
+        setCatalogVersion(prev => prev + 1);
+      }
+    } catch (error) {
+      console.error("Error refreshing cloud data:", error);
+    }
+  };
+
+  // Load from cloud on mount
+  useEffect(() => {
+    if (isCloudEnabled && isAuthenticated) {
+      refreshAllData();
+    }
+  }, [isCloudEnabled, isAuthenticated]);
+
+  // Subscribe to changes from other devices
+  useEffect(() => {
+    if (isCloudEnabled && isAuthenticated) {
+      const unsubscribe = subscribeToChanges(() => {
+        refreshAllData();
+      });
+      return unsubscribe;
+    }
+  }, [isCloudEnabled, isAuthenticated, subscribeToChanges]);
 
   // Sync to cloud when data changes
   useEffect(() => {
@@ -425,6 +483,7 @@ export default function HomePage() {
 
       {/* Catalog Modal */}
       <GroceryCatalog
+        key={catalogVersion} // Forces refresh when version changes
         isOpen={catalogOpen}
         onClose={() => setCatalogOpen(false)}
         onAddItem={handleAddItem}

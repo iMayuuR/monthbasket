@@ -57,7 +57,7 @@ export default function Header({ onOpenCatalog, totalItems, onDeleteMonth, showD
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
-              <span className="bg-gradient-to-r from-indigo-700 via-violet-700 to-indigo-700 dark:from-indigo-300 dark:via-violet-300 dark:to-indigo-300 bg-clip-text text-transparent font-black tracking-tighter">
+              <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-600 dark:from-white dark:via-indigo-200 dark:to-white bg-clip-text text-transparent font-black tracking-tighter">
                 MonthBasket
               </span>
             </motion.h1>

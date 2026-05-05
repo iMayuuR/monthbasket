@@ -36,5 +36,5 @@ export function useItemPrices() {
     return prices[itemId];
   };
 
-  return { prices, setItemPrice, getItemPrice };
+  return { prices, setItemPrice, getItemPrice, setPrices };
 }

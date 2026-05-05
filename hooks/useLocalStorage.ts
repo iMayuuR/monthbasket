@@ -148,5 +148,6 @@ export function useLocalStorage(key: string, initialValue: MonthlyLists) {
     clearMonth,
     setTotalBudget,
     deleteMonth,
+    setValue: setStoredValue,
   };
 }

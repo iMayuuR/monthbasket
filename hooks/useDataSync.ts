@@ -52,10 +52,10 @@ export function useDataSync() {
       if (catalogItems.length > 0) {
         const catalogData = catalogItems.map(item => ({
           user_id: userId,
-          marathi_name: item.marathiName,
-          english_name: item.englishName,
+          marathi_name: item.marathi_name || item.marathiName,
+          english_name: item.english_name || item.englishName,
           category: item.category,
-          typical_quantity: item.typicalQuantity || "",
+          typical_quantity: item.typical_quantity || item.typicalQuantity || "",
           created_at: new Date().toISOString(),
         }));
         await supabase.from("catalog").insert(catalogData);
@@ -121,7 +121,7 @@ export function useDataSync() {
     try {
       const { data } = await supabase.from("catalog").select("*").eq("user_id", userId).order("created_at", { ascending: false });
       return data?.map((item, index) => ({
-        id: Date.now() + index,
+        id: item.id || Date.now() + index,
         marathiName: item.marathi_name,
         englishName: item.english_name,
         category: item.category,
@@ -145,6 +145,38 @@ export function useDataSync() {
     }
   }, [isAuthenticated, userId]);
 
+  const subscribeToChanges = useCallback((onUpdate: () => void) => {
+    const client = supabase;
+    if (!isAuthenticated || !isSupabaseConfigured || !client) return () => {};
+
+    const monthsSubscription = client
+      .channel('public:months')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'months', filter: `user_id=eq.${userId}` }, () => {
+        onUpdate();
+      })
+      .subscribe();
+
+    const pricesSubscription = client
+      .channel('public:prices')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'prices', filter: `user_id=eq.${userId}` }, () => {
+        onUpdate();
+      })
+      .subscribe();
+
+    const catalogSubscription = client
+      .channel('public:catalog')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'catalog', filter: `user_id=eq.${userId}` }, () => {
+        onUpdate();
+      })
+      .subscribe();
+
+    return () => {
+      client.removeChannel(monthsSubscription);
+      client.removeChannel(pricesSubscription);
+      client.removeChannel(catalogSubscription);
+    };
+  }, [isAuthenticated, userId]);
+
   return {
     isSyncing,
     lastSyncTime,
@@ -155,5 +187,6 @@ export function useDataSync() {
     loadMonthsFromCloud,
     loadCatalogFromCloud,
     loadPricesFromCloud,
+    subscribeToChanges,
   };
 }
