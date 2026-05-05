@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getGeminiApiKey, saveGeminiApiKey, removeGeminiApiKey } from "@/services/gemini";
+import { getGeminiApiKey, saveGeminiApiKey, removeGeminiApiKey, isSystemKey } from "@/services/gemini";
+import { Sparkles } from "lucide-react";
 
 interface ApiKeySettingsProps {
   isOpen: boolean;
@@ -13,12 +14,16 @@ export default function ApiKeySettings({ isOpen, onClose }: ApiKeySettingsProps)
   const [apiKey, setApiKey] = useState("");
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [isUsingSystemKey, setIsUsingSystemKey] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
+      const systemKey = isSystemKey();
+      setIsUsingSystemKey(systemKey);
+      
       const existing = getGeminiApiKey();
       if (existing) {
-        setApiKey(existing);
+        setApiKey(systemKey ? "••••••••••••••••" : existing);
         setSaved(true);
       }
     }
@@ -95,19 +100,33 @@ export default function ApiKeySettings({ isOpen, onClose }: ApiKeySettingsProps)
                     onChange={(e) => setApiKey(e.target.value)}
                     placeholder="Gemini API key (required for AI catalog)"
                     autoComplete="off"
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    disabled={isUsingSystemKey}
+                    className={`w-full px-4 py-3 border-2 rounded-2xl focus:outline-none transition-all ${
+                      isUsingSystemKey 
+                        ? "bg-primary-50/50 dark:bg-primary-900/10 border-primary-200 dark:border-primary-800 text-primary-900 dark:text-primary-100" 
+                        : "border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500"
+                    }`}
                   />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                    Get your API key from{" "}
-                    <a
-                      href="https://makersuite.google.com/app/apikey"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary-600 hover:underline"
-                    >
-                      Google AI Studio
-                    </a>
-                  </p>
+                  {isUsingSystemKey ? (
+                    <div className="flex items-center gap-2 mt-3 p-3 bg-primary-50 dark:bg-primary-900/20 rounded-xl border border-primary-100 dark:border-primary-800/50">
+                      <Sparkles className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                      <p className="text-xs font-semibold text-primary-700 dark:text-primary-300">
+                        System key detected! Your Vercel environment variable is being used.
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                      Get your API key from{" "}
+                      <a
+                        href="https://makersuite.google.com/app/apikey"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary-600 hover:underline font-medium"
+                      >
+                        Google AI Studio
+                      </a>
+                    </p>
+                  )}
                 </div>
 
                 {error && (
@@ -128,13 +147,15 @@ export default function ApiKeySettings({ isOpen, onClose }: ApiKeySettingsProps)
                 )}
 
                 <div className="flex flex-wrap gap-2 pt-2 sm:gap-3">
-                  <button
-                    onClick={handleSave}
-                    className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors"
-                  >
-                    Save Key
-                  </button>
-                  {saved && (
+                  {!isUsingSystemKey && (
+                    <button
+                      onClick={handleSave}
+                      className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors"
+                    >
+                      Save Key
+                    </button>
+                  )}
+                  {saved && !isUsingSystemKey && (
                     <button
                       onClick={handleRemove}
                       className="px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl font-medium hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"

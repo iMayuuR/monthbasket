@@ -82,10 +82,20 @@ export function saveGeminiApiKey(apiKey: string) {
 }
 
 export function getGeminiApiKey(): string | null {
+  // Priority 1: Environment variable (e.g. from Vercel)
+  if (process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+    return process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  }
+
+  // Priority 2: Local storage (user's custom key)
   if (typeof window !== "undefined") {
     return localStorage.getItem(GEMINI_STORAGE_KEY);
   }
   return null;
+}
+
+export function isSystemKey(): boolean {
+  return !!process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 }
 
 export function removeGeminiApiKey() {
