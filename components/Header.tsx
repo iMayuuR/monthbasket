@@ -48,7 +48,7 @@ export default function Header({ onOpenCatalog, totalItems, onDeleteMonth, showD
             whileHover={{ rotate: 5, scale: 1.1 }}
             transition={{ type: "spring", stiffness: 300 }}
           >
-            <img src="/favicon.png" alt="MonthBasket Logo" className="w-full h-full object-cover" />
+            <img src="/logo-premium.png" alt="MonthBasket Logo" className="w-full h-full object-cover" />
           </motion.div>
           <div className="min-w-0">
             <motion.h1
@@ -57,7 +57,7 @@ export default function Header({ onOpenCatalog, totalItems, onDeleteMonth, showD
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
-              <span className="bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-indigo-700 via-violet-700 to-indigo-700 dark:from-indigo-300 dark:via-violet-300 dark:to-indigo-300 bg-clip-text text-transparent font-black tracking-tighter">
                 MonthBasket
               </span>
             </motion.h1>

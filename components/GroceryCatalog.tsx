@@ -318,29 +318,44 @@ export default function GroceryCatalog({ isOpen, onClose, onAddItem, itemPrices,
     setEditingPriceValue("");
   };
 
-  const handleAIVerifyField = async (sourceField: 'marathi' | 'english') => {
-    if (!editingItem) return;
-    const name = sourceField === 'marathi' ? editingItem.marathiName : editingItem.englishName;
+  const handleAIVerifyField = async (sourceField: 'marathi' | 'english', isNewItem = false) => {
+    const target = isNewItem ? newItem : editingItem;
+    if (!target) return;
+    
+    const name = sourceField === 'marathi' ? target.marathiName : target.englishName;
     if (!name.trim()) {
       alert(`Please enter ${sourceField === 'marathi' ? 'Marathi' : 'English'} name first`);
       return;
     }
+
     const apiKey = getGeminiApiKey();
     if (!apiKey) {
       alert("Please set your Gemini API key in settings (click the gear icon).");
       return;
     }
+
     setIsAIPROCESSING(true);
     try {
       const sourceLang = sourceField === 'marathi' ? 'marathi' : 'english';
-      const result = await categorizeItem(name, editingItem.id, sourceLang);
-      setEditingItem(prev => prev ? {
-        ...prev,
-        marathiName: result.marathiName || prev.marathiName,
-        englishName: result.englishName || prev.englishName,
-        category: result.category,
-      } : null);
-      alert(`AI Verification Complete!\n\nCategory: ${result.category}\nMarathi: ${result.marathiName}\nEnglish: ${result.englishName}\n\nConfidence: ${(result.confidence * 100).toFixed(0)}%`);
+      const result = await categorizeItem(name, isNewItem ? Date.now() : target.id, sourceLang);
+      
+      if (isNewItem) {
+        setNewItem(prev => ({
+          ...prev,
+          marathiName: result.marathiName || prev.marathiName,
+          englishName: result.englishName || prev.englishName,
+          category: result.category,
+        }));
+      } else {
+        setEditingItem(prev => prev ? {
+          ...prev,
+          marathiName: result.marathiName || prev.marathiName,
+          englishName: result.englishName || prev.englishName,
+          category: result.category,
+        } : null);
+      }
+      
+      alert(`AI Verification Complete!\n\nCategory: ${result.category}\nMarathi: ${result.marathiName}\nEnglish: ${result.englishName}`);
     } catch (error) {
       alert("AI verification failed: " + (error as Error).message);
     } finally {
@@ -464,8 +479,9 @@ export default function GroceryCatalog({ isOpen, onClose, onAddItem, itemPrices,
   }, [filteredItems]);
 
   return (
-    <AnimatePresence>
-      {isOpen && (
+    <>
+      <AnimatePresence>
+        {isOpen && (
         <motion.div
           data-testid="grocery-catalog-modal"
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -498,7 +514,7 @@ export default function GroceryCatalog({ isOpen, onClose, onAddItem, itemPrices,
               <div className="flex items-center justify-between gap-2 mb-3 xs:mb-4">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-lg overflow-hidden border border-primary-500/20 shadow-sm">
-                    <img src="/favicon.png" alt="" className="w-full h-full object-cover" />
+                    <img src="/logo-premium.png" alt="" className="w-full h-full object-cover" />
                   </div>
                   <motion.h2
                     data-testid="catalog-title"
@@ -591,47 +607,20 @@ export default function GroceryCatalog({ isOpen, onClose, onAddItem, itemPrices,
               </div>
 
               {/* Category Tabs */}
-              <div className="flex gap-1 px-3 xs:px-4 mt-2 xs:mt-3 overflow-x-auto pb-2 scrollbar-hide">
-                <motion.button
-                  data-testid="category-tab-all"
-                  onClick={() => setActiveCategory("all")}
-                  className={`px-2 py-1.5 xs:px-3 xs:py-2 text-[10px] xs:text-xs sm:text-sm rounded-lg sm:rounded-xl font-semibold transition-all whitespace-nowrap flex items-center gap-1 ${
-                    activeCategory === "all"
-                      ? "bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-lg shadow-primary-500/30"
-                      : "bg-white/80 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-primary-500/50 dark:hover:border-primary-500/50 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50/50 dark:hover:bg-primary-900/20"
-                  }`}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Package className="w-3 h-3" />
-                  <span className="hidden xs:inline">All</span>
-                  <span className="xs:hidden">({allItems.length})</span>
-                  <span className="hidden xs:inline">({allItems.length})</span>
-                </motion.button>
-                {dynamicCategories.map((cat) => {
-                  const itemsByCategory = getItemsByCategory();
-                  const count = (itemsByCategory[cat] || []).length;
-                  const icon = getCategoryIcon(cat);
-                  return (
-                    <motion.button
-                      key={cat}
-                      data-testid={`category-tab-${cat}`}
-                      onClick={() => setActiveCategory(cat)}
-                      className={`px-2 py-1.5 xs:px-3 xs:py-2 text-[10px] xs:text-xs sm:text-sm rounded-lg sm:rounded-xl font-semibold transition-all whitespace-nowrap flex items-center gap-1 ${
-                        activeCategory === cat
-                          ? "bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-lg shadow-primary-500/30"
-                          : "bg-white/80 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-primary-500/50 dark:hover:border-primary-500/50 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50/50 dark:hover:bg-primary-900/20"
-                      }`}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <span className="text-xs sm:text-base">{icon}</span>
-                      <span className="hidden sm:inline">{cat}</span>
-                      <span className="sm:hidden">{cat.substring(0, 4)}</span>
-                      <span className="text-[8px] xs:text-[10px] opacity-70">({count})</span>
-                    </motion.button>
-                  );
-                })}
+              <div className="flex gap-2 pb-2 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+                {["all", ...dynamicCategories].map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveCategory(cat)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border-2 ${
+                      activeCategory === cat
+                        ? "bg-primary-600 border-primary-600 text-white shadow-lg shadow-primary-500/20"
+                        : "bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-primary-200 dark:hover:border-primary-800"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -646,60 +635,44 @@ export default function GroceryCatalog({ isOpen, onClose, onAddItem, itemPrices,
                 <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-2 sm:mb-3">Add New Item</h3>
                 <form onSubmit={handleAddCustomItem} className="space-y-3">
                   {/* Unified item name input */}
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      name="itemName"
-                      value={newItem.itemName}
-                      onChange={handleInputChange}
-                      placeholder="Item name (Marathi / English)"
-                      className="flex-1 px-3 py-2.5 text-sm sm:px-4 sm:py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                      required
-                    />
-<PremiumButton
-                    variant="outline"
-                    size="sm"
-                    onClick={handleAICategorizeAll}
-                    disabled={isAIPROCESSING}
-                    icon={<Wand2 className={`h-3 w-3 xs:h-4 xs:w-4 ${isAIPROCESSING ? 'animate-spin' : ''}`} />}
-                    title="AI recategorize"
-                    className="px-1.5 xs:px-2"
-                  >
-                    <span className="hidden sm:inline">{isAIPROCESSING ? "..." : "AI"}</span>
-                    <span className="sm:hidden">✨</span>
-                  </PremiumButton>
-                  <motion.button
-                    onClick={handleClose}
-                    data-testid="catalog-back-button"
-                    className="flex items-center justify-center w-8 h-8 xs:w-9 xs:h-9 sm:w-10 sm:h-10 bg-primary-100 dark:bg-primary-900/30 hover:bg-primary-200 dark:hover:bg-primary-900/50 rounded-lg sm:rounded-xl transition-all hover:scale-105 active:scale-95 shadow-sm"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <ArrowLeft className="w-4 h-4 xs:w-5 xs:h-5 sm:w-5 sm:h-5 text-primary-600 dark:text-primary-400" />
-                  </motion.button>
-                </div>
-
-                  {/* Display translated names after AI processing */}
-                  {(newItem.marathiName || newItem.englishName) && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 bg-gradient-to-r from-primary-50/50 to-purple-50/50 dark:from-primary-900/20 dark:to-purple-900/20 rounded-xl border border-primary-100 dark:border-primary-900/30"
-                    >
-                      {newItem.marathiName && (
-                        <div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Marathi</p>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">{newItem.marathiName}</p>
-                        </div>
-                      )}
-                      {newItem.englishName && (
-                        <div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">English</p>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">{newItem.englishName}</p>
-                        </div>
-                      )}
-                    </motion.div>
-                  )}
+                  <div className="flex flex-col gap-2">
+                    <div className="relative flex items-center">
+                      <input
+                        type="text"
+                        placeholder="Marathi Name"
+                        value={newItem.marathiName}
+                        onChange={(e) => setNewItem({ ...newItem, marathiName: e.target.value })}
+                        className="w-full pl-3 pr-10 py-2.5 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleAIVerifyField('marathi', true)}
+                        disabled={isAIPROCESSING}
+                        className="absolute right-1 p-1.5 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors z-20"
+                        title="AI Magic"
+                      >
+                        <Wand2 className={`h-4 w-4 ${isAIPROCESSING ? 'animate-spin' : ''}`} />
+                      </button>
+                    </div>
+                    <div className="relative flex items-center">
+                      <input
+                        type="text"
+                        placeholder="English Name"
+                        value={newItem.englishName}
+                        onChange={(e) => setNewItem({ ...newItem, englishName: e.target.value })}
+                        className="w-full pl-3 pr-10 py-2.5 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleAIVerifyField('english', true)}
+                        disabled={isAIPROCESSING}
+                        className="absolute right-1 p-1.5 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors z-20"
+                        title="AI Magic"
+                      >
+                        <Wand2 className={`h-4 w-4 ${isAIPROCESSING ? 'animate-spin' : ''}`} />
+                      </button>
+                    </div>
+                  </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
@@ -773,11 +746,11 @@ export default function GroceryCatalog({ isOpen, onClose, onAddItem, itemPrices,
                   transition={{ duration: 0.3 }}
                 >
                   <motion.div
-                    className="w-20 h-20 bg-gradient-to-br from-indigo-500/10 to-violet-500/10 rounded-2xl border border-indigo-500/20 shadow-xl overflow-hidden flex items-center justify-center mb-6"
-                    animate={{ y: [0, -10, 0], rotate: [0, 5, -5, 0] }}
+                    className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-4 bg-gradient-to-br from-primary-500/10 to-violet-500/10 rounded-2xl flex items-center justify-center p-4 border border-primary-500/10"
+                    animate={{ rotate: [0, 5, -5, 0] }}
                     transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
                   >
-                    <img src="/favicon.png" alt="" className="w-full h-full object-cover" />
+                    <img src="/logo-premium.png" alt="" className="w-full h-full object-cover" />
                   </motion.div>
                   <p className="text-lg font-semibold text-gray-900 dark:text-white">No items found</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Try adjusting your search or category filter</p>
@@ -834,15 +807,15 @@ export default function GroceryCatalog({ isOpen, onClose, onAddItem, itemPrices,
                                 <div className="flex items-start justify-between gap-1.5 xs:gap-2">
                                   <div className="flex-1 min-w-0">
                                     <motion.p
-                                      className="font-bold text-gray-900 dark:text-white group-hover:text-primary-700 dark:group-hover:text-primary-400 transition-colors text-xs xs:text-sm sm:text-base truncate"
+                                      className="font-bold text-gray-900 dark:text-white group-hover:text-primary-700 dark:group-hover:text-primary-400 transition-colors text-sm xs:text-base sm:text-lg leading-tight"
                                       layout
                                     >
                                       {item.marathiName}
                                     </motion.p>
-                                    <p className="text-[10px] xs:text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-0.5 truncate">{item.englishName}</p>
+                                    <p className="text-xs xs:text-sm text-gray-700 dark:text-gray-300 mt-0.5 font-medium">{item.englishName}</p>
                                     {item.typicalQuantity && (
-                                      <p className="text-[10px] xs:text-xs text-gray-400 dark:text-gray-500 mt-0.5 flex items-center gap-1">
-                                        <span className="w-1 h-1 bg-gray-400 rounded-full" />
+                                      <p className="text-[10px] xs:text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1 bg-gray-100 dark:bg-gray-800 w-fit px-1.5 py-0.5 rounded-md">
+                                        <Package className="w-3 h-3 text-primary-500" />
                                         {item.typicalQuantity}
                                       </p>
                                     )}
@@ -903,41 +876,44 @@ export default function GroceryCatalog({ isOpen, onClose, onAddItem, itemPrices,
                                       )}
                                     </div>
                                   </div>
-                                  <div className="flex flex-col gap-1 xs:gap-1.5 sm:gap-2" onClick={(e) => e.stopPropagation()}>
+                                  <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800" onClick={(e) => e.stopPropagation()}>
+                                    <div className="flex gap-1.5">
+                                      <motion.button
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => handleEditItem(item)}
+                                        className="flex-1 flex items-center justify-center p-2 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 transition-all border border-blue-100 dark:border-blue-800/50"
+                                        title="Edit"
+                                      >
+                                        <Edit2 className="w-3.5 h-3.5" />
+                                      </motion.button>
+                                      <motion.button
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => handleDeleteCatalogItem(item.id)}
+                                        className="flex-1 flex items-center justify-center p-2 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 transition-all border border-red-100 dark:border-red-800/50"
+                                        title="Delete"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </motion.button>
+                                    </div>
                                     <motion.button
-                                      whileHover={{ scale: 1.1 }}
-                                      whileTap={{ scale: 0.9 }}
-                                      onClick={() => handleEditItem(item)}
-                                      className="flex items-center justify-center w-7 h-7 xs:w-8 xs:h-8 sm:w-10 sm:h-10 rounded-md xs:rounded-lg sm:rounded-xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 shadow-sm hover:shadow-md transition-all"
-                                      title="Edit"
-                                    >
-                                      <Edit2 className="w-2.5 h-2.5 xs:w-3 xs:h-3 sm:w-4 sm:h-4" />
-                                    </motion.button>
-                                    <motion.button
-                                      whileHover={{ scale: 1.1 }}
-                                      whileTap={{ scale: 0.9 }}
-                                      onClick={() => handleDeleteCatalogItem(item.id)}
-                                      className="flex items-center justify-center w-7 h-7 xs:w-8 xs:h-8 sm:w-10 sm:h-10 rounded-md xs:rounded-lg sm:rounded-xl bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 shadow-sm hover:shadow-md transition-all"
-                                      title="Delete"
-                                    >
-                                      <Trash2 className="w-2.5 h-2.5 xs:w-3 xs:h-3 sm:w-4 sm:h-4" />
-                                    </motion.button>
-                                    <motion.button
-                                      whileHover={{ scale: 1.1, rotate: 90 }}
-                                      whileTap={{ scale: 0.9 }}
+                                      whileHover={{ scale: 1.02 }}
+                                      whileTap={{ scale: 0.98 }}
                                       onClick={(e) => handleQuickAdd(item, e)}
-                                      className={`flex items-center justify-center w-7 h-7 xs:w-8 xs:h-8 sm:w-10 sm:h-10 rounded-md xs:rounded-lg sm:rounded-xl bg-gradient-to-br from-primary-100 to-purple-100 dark:from-primary-900/30 dark:to-purple-900/30 text-primary-600 dark:text-primary-400 shadow-sm hover:shadow-md transition-all relative ${recentlyAddedItemIds.has(item.id) ? 'ring-2 ring-green-500 ring-offset-1' : ''}`}
+                                      className={`flex items-center justify-center gap-1.5 py-2 rounded-xl bg-gradient-to-r from-primary-600 to-violet-600 text-white text-xs font-bold shadow-lg shadow-primary-500/20 transition-all relative ${recentlyAddedItemIds.has(item.id) ? 'ring-2 ring-green-500 ring-offset-2' : ''}`}
                                       title="Add"
                                     >
-                                      <Plus className="w-3 h-3 xs:w-4 xs:h-4 sm:w-5 sm:h-5" />
+                                      <Plus className="w-3.5 h-3.5" />
+                                      <span>Add</span>
                                       {recentlyAddedItemIds.has(item.id) && (
                                         <motion.div
                                           initial={{ scale: 0, opacity: 0 }}
                                           animate={{ scale: 1, opacity: 1 }}
-                                          className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 xs:w-3 xs:h-3 bg-green-500 rounded-full flex items-center justify-center"
+                                          className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center border-2 border-white dark:border-gray-900"
                                         >
-                                          <svg className="w-1.5 h-1.5 xs:w-2 xs:h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                          <svg className="w-2 h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" />
                                           </svg>
                                         </motion.div>
                                       )}
@@ -958,6 +934,7 @@ export default function GroceryCatalog({ isOpen, onClose, onAddItem, itemPrices,
           </motion.div>
         </motion.div>
       )}
+    </AnimatePresence>
 
       {/* Quantity Selector Modal */}
       <QuantitySelector
@@ -987,190 +964,188 @@ export default function GroceryCatalog({ isOpen, onClose, onAddItem, itemPrices,
 
             {/* Modal */}
             <motion.div
-              className="relative w-full max-w-[90vw] sm:max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden"
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto scrollbar-hide z-10 mx-4"
             >
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                    Edit Catalog Item
-                  </h2>
-                  <button
-                    onClick={() => setShowEditModal(false)}
-                    className="p-2 sm:p-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"
-                  >
-                    <svg className="w-5 h-5 sm:w-6 sm:h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Marathi Name
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        autoFocus
-                        value={editingItem.marathiName}
-                        onChange={(e) => setEditingItem({ ...editingItem, marathiName: e.target.value })}
-                        className="w-full pr-10 px-3 py-2 border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      />
-                      <PremiumButton
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleAIVerifyField('marathi')}
-                        disabled={isAIPROCESSING}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 h-9 px-3"
-                        title="AI verify/translate"
-                      >
-                        <Wand2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                      </PremiumButton>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      English Name
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={editingItem.englishName}
-                        onChange={(e) => setEditingItem({ ...editingItem, englishName: e.target.value })}
-                        className="w-full pr-10 px-3 py-2 border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      />
-                      <PremiumButton
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleAIVerifyField('english')}
-                        disabled={isAIPROCESSING}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 h-9 px-3"
-                        title="AI verify/translate"
-                      >
-                        <Wand2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                      </PremiumButton>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Category
-                    </label>
-                    <select
-                      value={editingItem.category}
-                      onChange={(e) => setEditingItem({ ...editingItem, category: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    >
-                      {dynamicCategories.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Typical Quantity
-                    </label>
-                    <input
-                      type="text"
-                      value={editingItem.typicalQuantity || ""}
-                      onChange={(e) => setEditingItem({ ...editingItem, typicalQuantity: e.target.value || undefined })}
-                      placeholder="e.g., 1 kg, 500 gm"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    />
-                  </div>
-
-                  <div className="flex gap-2">
-                    <PremiumButton
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => editingItem && handleVerifyItem(editingItem)}
-                      disabled={verifyingItemId === editingItem?.id || !editingItem}
-                      icon={<Wand2 className="h-4 w-4" />}
-                      title="AI verify with store knowledge"
-                      className="flex-1"
-                    >
-                      {verifyingItemId === editingItem?.id ? "Verifying..." : "Verify with AI"}
-                    </PremiumButton>
-                  </div>
-
-                  <div className="flex gap-3 pt-2">
+              <PremiumCard variant="glass" padding="none" className="overflow-hidden">
+                <div className="p-4 sm:p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-black bg-gradient-to-r from-primary-600 to-violet-600 bg-clip-text text-transparent">
+                      Edit Product
+                    </h3>
                     <button
                       onClick={() => setShowEditModal(false)}
-                      className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"
                     >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleSaveEdit}
-                      className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors"
-                    >
-                      Save Changes
+                      <X className="w-5 h-5 text-gray-500" />
                     </button>
                   </div>
 
-                  {editingItem && verificationResults.has(editingItem.id) && (() => {
-                    const result = verificationResults.get(editingItem.id)!;
-                    return (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="mt-4 p-4 bg-gradient-to-r from-primary-50 to-violet-50 dark:from-primary-900/20 dark:to-violet-900/20 rounded-xl border border-primary-200 dark:border-primary-800"
+                  <div className="space-y-5">
+                    <div>
+                      <label className="block text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">
+                        Marathi Name
+                      </label>
+                      <div className="relative flex items-center group">
+                        <input
+                          type="text"
+                          autoFocus
+                          value={editingItem.marathiName}
+                          onChange={(e) => setEditingItem({ ...editingItem, marathiName: e.target.value })}
+                          className="w-full pl-4 pr-12 py-3.5 bg-gray-50 dark:bg-gray-800/80 border-2 border-gray-100 dark:border-gray-700/50 dark:text-white rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all text-sm xs:text-base font-medium"
+                          placeholder="Marathi Name"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleAIVerifyField('marathi')}
+                          disabled={isAIPROCESSING}
+                          className="absolute right-2 p-2 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/40 rounded-xl transition-all z-20"
+                          title="AI Magic"
+                        >
+                          <Wand2 className={`h-5 w-5 ${isAIPROCESSING ? 'animate-spin' : ''}`} />
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">
+                        English Name
+                      </label>
+                      <div className="relative flex items-center group">
+                        <input
+                          type="text"
+                          value={editingItem.englishName}
+                          onChange={(e) => setEditingItem({ ...editingItem, englishName: e.target.value })}
+                          className="w-full pl-4 pr-12 py-3.5 bg-gray-50 dark:bg-gray-800/80 border-2 border-gray-100 dark:border-gray-700/50 dark:text-white rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all text-sm xs:text-base font-medium"
+                          placeholder="English Name"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleAIVerifyField('english')}
+                          disabled={isAIPROCESSING}
+                          className="absolute right-2 p-2 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/40 rounded-xl transition-all z-20"
+                          title="AI Magic"
+                        >
+                          <Wand2 className={`h-5 w-5 ${isAIPROCESSING ? 'animate-spin' : ''}`} />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">
+                          Category
+                        </label>
+                        <select
+                          value={editingItem.category}
+                          onChange={(e) => setEditingItem({ ...editingItem, category: e.target.value })}
+                          className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/80 border-2 border-gray-100 dark:border-gray-700/50 dark:text-white rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all text-sm font-medium appearance-none"
+                        >
+                          {dynamicCategories.map((cat) => (
+                            <option key={cat} value={cat}>
+                              {cat}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">
+                          Qty Hint
+                        </label>
+                        <input
+                          type="text"
+                          value={editingItem.typicalQuantity || ""}
+                          onChange={(e) => setEditingItem({ ...editingItem, typicalQuantity: e.target.value || undefined })}
+                          placeholder="e.g., 1 kg"
+                          className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/80 border-2 border-gray-100 dark:border-gray-700/50 dark:text-white rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all text-sm font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <PremiumButton
+                        type="button"
+                        variant="outline"
+                        size="md"
+                        onClick={() => editingItem && handleVerifyItem(editingItem)}
+                        disabled={verifyingItemId === editingItem?.id || !editingItem}
+                        icon={<Sparkles className={`h-4 w-4 ${verifyingItemId === editingItem?.id ? 'animate-pulse' : ''}`} />}
+                        className="w-full py-4 text-xs font-black uppercase tracking-widest"
                       >
-                        <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-                          <Sparkles className="w-4 h-4 text-primary-600" />
-                          AI Store Verification
-                        </h4>
-                        <div className="space-y-2 text-xs sm:text-sm">
-                          <p><span className="font-semibold">Confidence:</span> {(result.confidence * 100).toFixed(0)}%</p>
-                          <p><span className="font-semibold">Store Patterns:</span> {result.storePatterns?.join(", ")}</p>
-                          <p><span className="font-semibold">Suggested Sizes:</span> {result.suggestedPackSizes?.join(", ")}</p>
-                          <p><span className="font-semibold">Reasoning:</span> {result.reasoning}</p>
-                          <div className="flex gap-2 mt-3">
-                            <PremiumButton
-                              size="sm"
-                              onClick={() => {
-                                setEditingItem(prev => prev ? {
-                                  ...prev,
-                                  marathiName: result.marathiName,
-                                  englishName: result.englishName,
-                                  category: result.category,
-                                  typicalQuantity: result.typicalQuantity,
-                                } : null);
-                                alert("Item updated with verified data!");
-                              }}
-                            >
-                              Apply
-                            </PremiumButton>
-                            <PremiumButton
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => {
-                                const newVerifications = new Map(verificationResults);
-                                newVerifications.delete(editingItem.id);
-                                setVerificationResults(newVerifications);
-                              }}
-                            >
-                              Dismiss
-                            </PremiumButton>
+                        {verifyingItemId === editingItem?.id ? "AI Verifying..." : "Deep Verify with AI"}
+                      </PremiumButton>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 pt-4">
+                      <button
+                        onClick={() => setShowEditModal(false)}
+                        className="px-4 py-3.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-2xl font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-all active:scale-95"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleSaveEdit}
+                        className="px-4 py-3.5 bg-gradient-to-r from-primary-600 to-violet-600 text-white rounded-2xl font-bold shadow-lg shadow-primary-500/20 hover:shadow-primary-500/40 transition-all active:scale-95"
+                      >
+                        Save
+                      </button>
+                    </div>
+
+                    {editingItem && verificationResults.has(editingItem.id) && (() => {
+                      const result = verificationResults.get(editingItem.id)!;
+                      return (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="p-4 bg-gradient-to-br from-primary-500/5 to-violet-500/5 dark:from-primary-500/10 dark:to-violet-500/10 rounded-2xl border-2 border-primary-500/20"
+                        >
+                          <h4 className="text-xs font-black text-primary-600 dark:text-primary-400 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                            <Wand2 className="w-4 h-4" />
+                            AI Analysis
+                          </h4>
+                          <div className="space-y-2.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Confidence</span>
+                              <span className="text-xs font-bold text-gray-900 dark:text-white">{(result.confidence * 100).toFixed(0)}%</span>
+                            </div>
+                            <p className="text-xs leading-relaxed text-gray-600 dark:text-gray-400 italic">"{result.reasoning}"</p>
+                            <div className="flex gap-2 mt-2">
+                              <button
+                                onClick={() => {
+                                  setEditingItem(prev => prev ? {
+                                    ...prev,
+                                    marathiName: result.marathiName,
+                                    englishName: result.englishName,
+                                    category: result.category,
+                                    typicalQuantity: result.typicalQuantity,
+                                  } : null);
+                                }}
+                                className="flex-1 py-2 bg-primary-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg"
+                              >
+                                Apply
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const newVerifications = new Map(verificationResults);
+                                  newVerifications.delete(editingItem.id);
+                                  setVerificationResults(newVerifications);
+                                }}
+                                className="px-3 py-2 bg-gray-100 dark:bg-gray-800 text-gray-500 text-[10px] font-black uppercase tracking-widest rounded-lg"
+                              >
+                                Skip
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })()}
+                        </motion.div>
+                      );
+                    })()}
+                  </div>
                 </div>
-              </div>
+              </PremiumCard>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-    </AnimatePresence>
+    </>
   );
 }

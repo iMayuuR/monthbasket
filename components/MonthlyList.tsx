@@ -180,14 +180,16 @@ export default function MonthlyList({
                         <div className="flex-1">
                           <motion.p
                             data-testid={`item-name-${item.id}`}
-                            className={`font-semibold text-gray-900 dark:text-white truncate ${
-                              item.checked ? "line-through text-gray-400 dark:text-gray-500" : ""
+                            className={`font-bold text-gray-900 dark:text-white text-sm xs:text-base leading-snug ${
+                              item.checked ? "line-through text-gray-400 dark:text-gray-500 opacity-60" : ""
                             }`}
                             animate={item.checked ? { opacity: 0.6 } : { opacity: 1 }}
                           >
                             {item.marathiName}
                           </motion.p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{item.name}</p>
+                          <p className={`text-xs xs:text-sm font-medium mt-0.5 ${
+                            item.checked ? "text-gray-400 dark:text-gray-600" : "text-gray-700 dark:text-gray-300"
+                          }`}>{item.name}</p>
                           {(item.quantity || item.price) && (
                             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                               {item.price && (
@@ -247,7 +249,7 @@ export default function MonthlyList({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => startEditing(item)}
-                                className="h-7 text-xs"
+                                className="h-8 text-xs font-bold bg-blue-50/50 dark:bg-blue-900/20"
                                 icon={<Edit2 className="w-3 h-3" />}
                               >
                                 {item.quantity || "Qty"}
@@ -274,7 +276,7 @@ export default function MonthlyList({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => startEditingPrice(item)}
-                                className="h-7 text-xs"
+                                className="h-8 text-xs font-bold bg-purple-50/50 dark:bg-purple-900/20"
                                 icon={<Sparkles className="w-3 h-3" />}
                               >
                                 {item.price ? `₹${item.price}` : "Price"}
@@ -485,56 +487,51 @@ export default function MonthlyList({
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <PremiumCard data-testid="monthly-totals" variant="gradient" padding="lg" className="overflow-hidden relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-violet-500/5" />
+          <PremiumCard data-testid="monthly-totals" variant="gradient" padding="xl" className="overflow-hidden relative border-2 border-primary-500/20 shadow-2xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary-500/10 via-transparent to-violet-500/10" />
             <div className="relative">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div className="space-y-2">
-                  <p className="text-sm font-bold text-purple-700 dark:text-purple-400 flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+                <div className="space-y-3">
+                  <p className="text-xs font-black text-primary-600 dark:text-primary-400 uppercase tracking-[0.2em] flex items-center gap-2">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    Estimated Cost
+                    Estimated Budget
                   </p>
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     {pendingItemTotal > 0 && (
                       <motion.p
-                        className="text-sm text-gray-600 dark:text-gray-300"
+                        className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center justify-between sm:justify-start gap-4"
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.1 }}
                       >
-                        To buy:{" "}
-                        <span className="font-bold text-purple-600 dark:text-purple-400">
-                          ₹{pendingItemTotal.toFixed(0)}
-                        </span>
+                        <span className="opacity-70">Remaining:</span>
+                        <span className="font-bold text-gray-900 dark:text-white">₹{pendingItemTotal.toFixed(0)}</span>
                       </motion.p>
                     )}
                     {completedItemTotal > 0 && (
                       <motion.p
-                        className="text-sm text-gray-600 dark:text-gray-300"
+                        className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center justify-between sm:justify-start gap-4"
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.2 }}
+                        transition={{ delay: 0.1 }}
                       >
-                        Completed:{" "}
-                        <span className="font-bold text-purple-600 dark:text-purple-400">
-                          ₹{completedItemTotal.toFixed(0)}
-                        </span>
+                        <span className="opacity-70">Spent:</span>
+                        <span className="font-bold text-gray-900 dark:text-white">₹{completedItemTotal.toFixed(0)}</span>
                       </motion.p>
                     )}
                   </div>
                 </div>
                 <motion.div
-                  className="text-right"
+                  className="text-right bg-white/50 dark:bg-gray-900/50 p-4 rounded-2xl border border-white dark:border-gray-800"
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.3 }}
+                  transition={{ delay: 0.2 }}
                 >
-                  <p className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-violet-600 dark:from-purple-400 dark:to-violet-400 bg-clip-text text-transparent">
+                  <p className="text-3xl xs:text-4xl font-black bg-gradient-to-r from-primary-600 via-violet-600 to-primary-600 bg-clip-text text-transparent">
                     ₹{(pendingItemTotal + completedItemTotal).toFixed(0)}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Total</p>
+                  <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Total Budget</p>
                 </motion.div>
               </div>
             </div>

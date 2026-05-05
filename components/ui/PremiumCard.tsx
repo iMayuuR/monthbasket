@@ -11,15 +11,15 @@ const premiumCardVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-white dark:bg-gray-800/50 backdrop-blur-md border border-gray-200 dark:border-gray-700/50 shadow-sm hover:shadow-lg dark:hover:shadow-none dark:shadow-none",
+          "bg-white dark:bg-gray-900 backdrop-blur-xl border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-xl dark:shadow-none transition-all duration-300",
         glass:
-          "bg-white/30 dark:bg-gray-900/40 backdrop-blur-xl border border-white/20 dark:border-gray-700/30 shadow-lg hover:shadow-xl dark:shadow-none",
+          "bg-white/40 dark:bg-gray-900/60 backdrop-blur-2xl border border-white/20 dark:border-gray-700/30 shadow-lg hover:shadow-2xl dark:shadow-none",
         gradient:
-          "bg-gradient-to-br from-purple-50 via-violet-50/50 to-indigo-50/30 dark:from-purple-900/20 dark:via-violet-900/20 dark:to-indigo-900/20 backdrop-blur-md border border-purple-200/50 dark:border-violet-800/30 shadow-sm hover:shadow-md dark:hover:shadow-none",
+          "bg-gradient-to-br from-white via-violet-50/30 to-indigo-50/20 dark:from-gray-900 dark:via-purple-900/10 dark:to-indigo-900/10 backdrop-blur-xl border border-purple-200/50 dark:border-violet-800/20 shadow-sm hover:shadow-xl dark:shadow-none",
         elevated:
-          "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl dark:shadow-gray-900/50",
+          "bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-xl hover:shadow-2xl dark:shadow-gray-950",
         minimal:
-          "bg-transparent border border-gray-200 dark:border-gray-700/50 hover:border-primary-500/50 dark:hover:border-primary-500/30",
+          "bg-transparent border border-gray-100 dark:border-gray-800 hover:border-primary-500/50 dark:hover:border-primary-500/30",
       },
       padding: {
         none: "",
