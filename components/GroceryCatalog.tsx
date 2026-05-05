@@ -337,7 +337,7 @@ export default function GroceryCatalog({ isOpen, onClose, onAddItem, itemPrices,
     setIsAIPROCESSING(true);
     try {
       const sourceLang = sourceField === 'marathi' ? 'marathi' : 'english';
-      const result = await categorizeItem(name, isNewItem ? Date.now() : target.id, sourceLang);
+      const result = await categorizeItem(name, isNewItem ? Date.now() : (target as GroceryItem).id, sourceLang);
       
       if (isNewItem) {
         setNewItem(prev => ({
