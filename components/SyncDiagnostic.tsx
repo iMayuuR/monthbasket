@@ -18,9 +18,9 @@ export default function SyncDiagnostic({ userId, onForcePull, onForcePush }: Syn
   const [results, setResults] = useState<{
     connection: boolean;
     auth: boolean;
-    monthsTable: boolean;
-    catalogTable: boolean;
     pricesTable: boolean;
+    realtime: boolean;
+    writeAccess: boolean;
     error?: string;
   } | null>(null);
 
@@ -36,19 +36,51 @@ export default function SyncDiagnostic({ userId, onForcePull, onForcePush }: Syn
         monthsTable: false,
         catalogTable: false,
         pricesTable: false,
-        error: "Supabase environment variables are missing! Please check your .env.local file or Vercel settings.",
+        realtime: false,
+        writeAccess: false,
+        error: "Supabase environment variables are missing! Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.",
       });
       return;
     }
 
     try {
-      // 1. Test connection
-      const { error: pingError } = await supabase.from('months').select('id').limit(1);
-      
-      // 2. Test tables
+      // 1. Test connection & Tables
       const { error: monthsError } = await supabase.from('months').select('count').limit(1);
       const { error: catalogError } = await supabase.from('catalog').select('count').limit(1);
       const { error: pricesError } = await supabase.from('prices').select('count').limit(1);
+
+      // 2. Test Realtime
+      let realtimeStatus = false;
+      const testChannel = supabase.channel('diag-test');
+      
+      const subPromise = new Promise<boolean>((resolve) => {
+        testChannel.subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            resolve(true);
+          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+            resolve(false);
+          }
+        });
+        setTimeout(() => resolve(false), 3000);
+      });
+
+      realtimeStatus = await subPromise;
+      supabase.removeChannel(testChannel);
+
+      // 3. Test Write Access
+      let writeStatus = false;
+      const testKey = `diag_test_${Date.now()}`;
+      const { error: insertError } = await supabase.from('months').insert({
+        user_id: userId,
+        month_key: testKey,
+        items: '[]'
+      });
+
+      if (!insertError) {
+        writeStatus = true;
+        // Clean up
+        await supabase.from('months').delete().eq('month_key', testKey);
+      }
 
       setResults({
         connection: true,
@@ -56,10 +88,12 @@ export default function SyncDiagnostic({ userId, onForcePull, onForcePush }: Syn
         monthsTable: !monthsError,
         catalogTable: !catalogError,
         pricesTable: !pricesError,
-        error: (monthsError || catalogError || pricesError)?.message,
+        realtime: realtimeStatus,
+        writeAccess: writeStatus,
+        error: (monthsError || catalogError || pricesError || insertError)?.message,
       });
 
-      if (monthsError || catalogError || pricesError) {
+      if (monthsError || catalogError || pricesError || !realtimeStatus || !writeStatus) {
         setStatus("error");
       } else {
         setStatus("success");
@@ -101,6 +135,8 @@ export default function SyncDiagnostic({ userId, onForcePull, onForcePush }: Syn
           <DiagnosticItem label="Months Table Access" success={results.monthsTable} />
           <DiagnosticItem label="Catalog Table Access" success={results.catalogTable} />
           <DiagnosticItem label="Prices Table Access" success={results.pricesTable} />
+          <DiagnosticItem label="Realtime Subscription" success={results.realtime} />
+          <DiagnosticItem label="Database Write Access" success={results.writeAccess} />
           
           {results.error && (
             <div className="mt-3 p-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-[10px] text-red-600 dark:text-red-400 border border-red-100 dark:border-red-800">
@@ -144,6 +180,19 @@ export default function SyncDiagnostic({ userId, onForcePull, onForcePush }: Syn
                 >
                   {actionStatus === "busy" ? "Pushing..." : "Force Push (Save)"}
                 </PremiumButton>
+              </div>
+              <div className="mt-2">
+                <button
+                  onClick={() => {
+                    if (confirm("Are you sure? This will delete all local grocery data and reload from cloud. Any unsynced changes will be lost.")) {
+                      localStorage.clear();
+                      window.location.reload();
+                    }
+                  }}
+                  className="text-[9px] text-red-500 hover:text-red-600 underline font-medium"
+                >
+                  Reset Local Data & Reload
+                </button>
               </div>
               <p className="mt-2 text-[9px] text-gray-500 dark:text-gray-400">
                 Use "Force Pull" to get data from other devices. Use "Force Push" to send local data to the cloud.
