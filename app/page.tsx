@@ -70,42 +70,44 @@ export default function HomePage() {
     setValue: setMonthlyLists,
   } = useLocalStorage("grocery-monthly-lists", {});
 
-  // Function to reload all data from cloud
+  const [hasInitialPullCompleted, setHasInitialPullCompleted] = useState(false);
+
+  // Initial pull from cloud
   const refreshAllData = async () => {
+    if (!isCloudEnabled || !isAuthenticated) {
+      setHasInitialPullCompleted(true);
+      return;
+    }
+
     try {
       const { months, budgets } = await loadMonthsFromCloud();
       if (Object.keys(months).length > 0) {
-        const newMonthlyLists: any = {};
-        Object.keys(months).forEach(key => {
-          newMonthlyLists[key] = {
-            items: months[key],
-            totalBudget: budgets[key]
+        const newMonthlyLists: Record<string, { items: MonthlyItem[]; totalBudget: number }> = {};
+        Object.entries(months).forEach(([monthKey, items]) => {
+          newMonthlyLists[monthKey] = {
+            items: items as MonthlyItem[],
+            totalBudget: budgets[monthKey] || 0,
           };
         });
         setMonthlyLists(newMonthlyLists);
       }
-
-      const prices = await loadPricesFromCloud();
-      if (Object.keys(prices).length > 0) {
-        setPrices(prices);
-      }
-
+      
       const cloudCatalog = await loadCatalogFromCloud();
       if (cloudCatalog.length > 0) {
         saveCatalog(cloudCatalog);
         setCatalogVersion(prev => prev + 1);
       }
+
+      const cloudPrices = await loadPricesFromCloud();
+      if (Object.keys(cloudPrices).length > 0) {
+        setPrices(cloudPrices);
+      }
     } catch (error) {
-      console.error("Error refreshing cloud data:", error);
+      console.error("Refresh data error:", error);
+    } finally {
+      setHasInitialPullCompleted(true);
     }
   };
-
-  // Load from cloud on mount
-  useEffect(() => {
-    if (isCloudEnabled && isAuthenticated) {
-      refreshAllData();
-    }
-  }, [isCloudEnabled, isAuthenticated]);
 
   // Subscribe to changes from other devices
   useEffect(() => {
@@ -118,25 +120,34 @@ export default function HomePage() {
     }
   }, [isCloudEnabled, isAuthenticated, subscribeToChanges]);
 
-  // Sync to cloud when data changes
   useEffect(() => {
-    if (isCloudEnabled && monthlyLists && Object.keys(monthlyLists).length > 0) {
+    if (isCloudEnabled && isAuthenticated) {
+      refreshAllData();
+    }
+  }, [isCloudEnabled, isAuthenticated]);
+
+  // Sync to cloud when data changes
+  // IMPORTANT: We only sync IF the initial pull has completed to avoid overwriting cloud with empty local state
+  useEffect(() => {
+    if (isCloudEnabled && hasInitialPullCompleted && monthlyLists) {
+      // Create a simplified structure for the cloud (just items by month)
+      const itemsByMonth: Record<string, MonthlyItem[]> = {};
       const budgets: Record<string, number | undefined> = {};
-      const itemsByMonth: Record<string, any[]> = {};
-      Object.keys(monthlyLists).forEach((m: string) => {
-        const monthData = monthlyLists[m as keyof typeof monthlyLists];
-        budgets[m] = monthData?.totalBudget;
-        itemsByMonth[m] = monthData?.items || [];
+      
+      Object.entries(monthlyLists).forEach(([monthKey, data]) => {
+        itemsByMonth[monthKey] = data.items;
+        budgets[monthKey] = data.totalBudget;
       });
+
       syncMonthsToCloud(itemsByMonth, budgets);
     }
-  }, [monthlyLists, isCloudEnabled, syncMonthsToCloud]);
+  }, [monthlyLists, isCloudEnabled, hasInitialPullCompleted, syncMonthsToCloud]);
 
   useEffect(() => {
-    if (isCloudEnabled && itemPrices && Object.keys(itemPrices).length > 0) {
+    if (isCloudEnabled && hasInitialPullCompleted && itemPrices && Object.keys(itemPrices).length > 0) {
       syncPricesToCloud(itemPrices);
     }
-  }, [itemPrices, isCloudEnabled, syncPricesToCloud]);
+  }, [itemPrices, isCloudEnabled, hasInitialPullCompleted, syncPricesToCloud]);
 
   // Update available months whenever monthlyLists changes
   useEffect(() => {
